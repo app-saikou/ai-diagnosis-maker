@@ -1,0 +1,24 @@
+/*
+  # Fix cron job syntax error
+
+  1. Changes
+    - Drop existing cron job
+    - Create new cron job with simple SQL approach
+    - Avoid complex DO blocks that cause syntax errors
+
+  2. Security
+    - Direct SQL execution without external dependencies
+    - No authentication issues
+    - Simple and reliable
+*/
+
+-- Drop existing cron job if it exists
+SELECT cron.unschedule('reset-daily-quiz-count');
+
+-- Create new cron job with direct SQL approach
+-- This will run every day at 15:00 UTC which is 00:00 JST (midnight in Japan)
+SELECT cron.schedule(
+  'reset-daily-quiz-count',
+  '0 15 * * *',
+  'UPDATE users SET quizzes_taken_today = 0, last_reset = CURRENT_DATE WHERE last_reset < CURRENT_DATE;'
+);
