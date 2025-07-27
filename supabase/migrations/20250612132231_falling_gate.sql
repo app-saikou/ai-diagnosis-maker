@@ -11,6 +11,9 @@
     - Only resets users whose last_reset is not today
 */
 
+-- Create the cron extension if it doesn't exist
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
 -- Create a cron job to reset daily quiz counts at midnight JST (15:00 UTC)
 -- This will run every day at 15:00 UTC which is 00:00 JST (midnight in Japan)
 SELECT cron.schedule(

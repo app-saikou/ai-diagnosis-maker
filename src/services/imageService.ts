@@ -5,6 +5,7 @@ interface ShareImageParams {
   quizTitle: string;
   resultTitle: string;
   resultDescription: string;
+  recommendedAction?: string;
   url?: string; // URLを追加
 }
 
@@ -123,7 +124,7 @@ export const imageService = {
       margin-top: 10px;
       color: rgba(255,255,255,0.8);
     `;
-    qrTextEl.textContent = "QRコードをスキャンしてアプリにアクセス";
+    qrTextEl.textContent = "Scan QR code to access the app";
 
     // 要素を組み立て
     content.appendChild(appTitleEl);
@@ -286,6 +287,7 @@ export const imageService = {
     quizTitle,
     resultTitle,
     resultDescription,
+    recommendedAction,
   }: ShareImageParams): Promise<string> => {
     const container = document.createElement("div");
     container.style.cssText = `
@@ -299,7 +301,7 @@ export const imageService = {
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 60px;
+      padding: 40px;
       box-sizing: border-box;
       font-family: 'Inter', sans-serif;
       color: white;
@@ -345,9 +347,9 @@ export const imageService = {
     // アプリタイトル（ロゴ風）
     const appTitleEl = document.createElement("div");
     appTitleEl.style.cssText = `
-      font-size: 40px;
+      font-size: 36px;
       font-weight: bold;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
       color: #E5E7EB;
     `;
@@ -356,9 +358,9 @@ export const imageService = {
     // 相談タイトル（サブタイトル風）
     const quizTitleEl = document.createElement("div");
     quizTitleEl.style.cssText = `
-      font-size: 28px;
+      font-size: 24px;
       font-weight: normal;
-      margin-bottom: 40px;
+      margin-bottom: 25px;
       color: #D1D5DB;
     `;
     quizTitleEl.textContent = quizTitle;
@@ -366,9 +368,9 @@ export const imageService = {
     // 結果タイトル（メイン）
     const resultTitleEl = document.createElement("div");
     resultTitleEl.style.cssText = `
-      font-size: 44px;
+      font-size: 40px;
       font-weight: bold;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
     `;
     resultTitleEl.textContent = resultTitle;
@@ -379,21 +381,41 @@ export const imageService = {
       width: 400px;
       height: 3px;
       background: linear-gradient(90deg, #8B5CF6, #14B8A6);
-      margin: 20px 0 30px 0;
+      margin: 15px 0 20px 0;
     `;
 
     // 結果説明
     const resultDescEl = document.createElement("div");
     resultDescEl.style.cssText = `
-      font-size: 22px;
-      line-height: 1.5;
+      font-size: 20px;
+      line-height: 1.6;
       max-width: 900px;
       color: #D1D5DB;
+      margin-bottom: 15px;
     `;
     resultDescEl.textContent =
-      resultDescription.length > 80
-        ? resultDescription.substring(0, 80) + "..."
+      resultDescription.length > 120
+        ? resultDescription.substring(0, 120) + "..."
         : resultDescription;
+
+    // おすすめアクション（存在する場合のみ表示）
+    let recommendedActionEl: HTMLDivElement | null = null;
+    if (recommendedAction) {
+      recommendedActionEl = document.createElement("div");
+      recommendedActionEl.style.cssText = `
+        font-size: 18px;
+        line-height: 1.5;
+        max-width: 900px;
+        color: #8B5CF6;
+        font-weight: 500;
+        margin-top: 10px;
+        padding: 15px;
+        background: rgba(139, 92, 246, 0.1);
+        border-radius: 8px;
+        border-left: 4px solid #8B5CF6;
+      `;
+      recommendedActionEl.textContent = `💡 ${recommendedAction}`;
+    }
 
     // 要素を組み立て
     content.appendChild(appTitleEl);
@@ -401,6 +423,9 @@ export const imageService = {
     content.appendChild(resultTitleEl);
     content.appendChild(accentLine);
     content.appendChild(resultDescEl);
+    if (recommendedActionEl) {
+      content.appendChild(recommendedActionEl);
+    }
 
     container.appendChild(bgCircle1);
     container.appendChild(bgCircle2);

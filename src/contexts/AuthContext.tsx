@@ -79,8 +79,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("onAuthStateChange event:", event, session);
+      console.log("Session user:", session?.user);
+      console.log("Previous isAuthenticated:", isAuthenticated);
+
       setUser(session?.user ?? null);
-      setIsAuthenticated(!!session?.user);
+      const newIsAuthenticated = !!session?.user;
+      setIsAuthenticated(newIsAuthenticated);
+
+      console.log("New isAuthenticated:", newIsAuthenticated);
 
       // ローディングを先に止める
       setIsLoading(false);

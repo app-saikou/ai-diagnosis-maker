@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { QuizMode, Quiz, QuizModeConfig, QuizResult } from "../types";
-import { aiService } from "../services/aiService";
-import { useLanguage } from "./LanguageContext";
 import { useAuth } from "./AuthContext";
+import { useLanguage } from "./LanguageContext";
+import { useUser } from "./UserContext";
 import { supabase } from "../lib/supabase";
+import { aiService } from "../services/aiService";
+import { Quiz, QuizMode, QuizModeConfig, QuizResult } from "../types";
 
 interface QuizContextType {
   quizModes: Record<QuizMode, QuizModeConfig>;
@@ -41,8 +42,9 @@ export const useQuiz = () => {
 export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { t } = useLanguage();
   const { user } = useAuth();
+  const { t } = useLanguage();
+  const { incrementQuizCount } = useUser();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -117,20 +119,14 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
         throw quizzesError;
       }
 
-      console.log("Raw quiz data from Supabase:", quizzesData);
-
       const formattedQuizzes: Quiz[] = quizzesData.map((quiz: any) => {
-        console.log(
-          `Quiz "${quiz.title}": completions=${quiz.completions}, likes=${quiz.likes}, creator=${quiz.creator?.display_name}`
-        );
-
         return {
           id: quiz.id,
           title: quiz.title,
           description: quiz.description,
           createdAt: quiz.created_at,
           createdBy: quiz.created_by,
-          creatorDisplayName: quiz.creator?.display_name || "ゲストユーザー",
+          creatorDisplayName: quiz.creator?.display_name || t("guestUser"),
           isTemplate: quiz.is_template,
           templateId: quiz.template_id,
           completions: quiz.completions || 0, // デフォルト値を確実に設定
@@ -155,15 +151,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
         };
       });
 
-      console.log("Formatted quizzes:", formattedQuizzes);
-      console.log("=== LIKES DEBUG ===");
-      formattedQuizzes.forEach((q) => {
-        console.log(
-          `Quiz: ${q.title}, Likes: ${q.likes}, Creator: ${q.creatorDisplayName}`
-        );
-      });
-      console.log("=== END LIKES DEBUG ===");
-
       // クイズリスト取得後、各クイズごとにlikesをquiz_likesの件数で上書き
       const updatedQuizzes = await Promise.all(
         formattedQuizzes.map(async (quiz) => {
@@ -178,7 +165,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
       setQuizzes(updatedQuizzes);
     } catch (err) {
       console.error("Error loading quizzes:", err);
-      setError("クイズの読み込み中にエラーが発生しました");
+      setError(t("quizLoadingError"));
     } finally {
       setIsLoading(false);
     }
@@ -268,7 +255,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
       // Fetch the complete quiz with all related data
       const generatedQuiz = await getQuizById(quiz.id);
       if (!generatedQuiz) {
-        throw new Error("Failed to fetch generated quiz");
+        throw new Error(t("quizGenerationError"));
       }
 
       setCurrentQuiz(generatedQuiz);
@@ -289,7 +276,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const generateResults = async (): Promise<QuizResult[]> => {
     if (!currentQuiz) {
-      throw new Error("クイズが選択されていません");
+      throw new Error(t("quizNotSelected"));
     }
 
     try {
@@ -308,6 +295,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
               quiz_id: currentQuiz.id,
               title: result.title,
               description: result.description,
+              recommended_action: result.recommendedAction,
               image_url: result.imageUrl,
             })
             .select()
@@ -320,6 +308,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
             id: data.id,
             title: data.title,
             description: data.description,
+            recommendedAction: result.recommendedAction,
             imageUrl: data.image_url,
           };
         })
@@ -333,7 +322,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
       return savedResults;
     } catch (err) {
       console.error("Error generating results:", err);
-      throw new Error("相談結果の生成中にエラーが発生しました");
+      throw new Error(t("quizResultGenerationError"));
     }
   };
 
@@ -383,6 +372,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
             id,
             title,
             description,
+            recommended_action,
             image_url
           )
         `
@@ -404,7 +394,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
         description: quiz.description,
         createdAt: quiz.created_at,
         createdBy: quiz.created_by,
-        creatorDisplayName: quiz.creator?.display_name || "ゲストユーザー",
+        creatorDisplayName: quiz.creator?.display_name || t("guestUser"),
         isTemplate: quiz.is_template,
         templateId: quiz.template_id,
         completions: quiz.completions || 0,
@@ -423,6 +413,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
           id: r.id,
           title: r.title,
           description: r.description,
+          recommendedAction: r.recommended_action || undefined,
           imageUrl: r.image_url,
         })),
         tags: [],
@@ -449,24 +440,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({
     setCurrentQuestionIndex(0);
     setAnswers({});
     setError(null);
-  };
-
-  // 相談回数をインクリメントする関数を追加
-  const incrementQuizCount = async () => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from("users")
-        .update({
-          quizzes_taken_today: user.quizzes_taken_today + 1,
-        })
-        .eq("id", user.id);
-
-      if (error) throw error;
-    } catch (err) {
-      console.error("Error incrementing quiz count:", err);
-    }
   };
 
   const getLikeCount = async (quizId: string): Promise<number> => {

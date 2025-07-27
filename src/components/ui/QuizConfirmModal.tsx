@@ -1,6 +1,6 @@
-import { X } from 'lucide-react';
-import { useUser } from '../../contexts/UserContext';
-import { useAuth } from '../../contexts/AuthContext';
+import { X } from "lucide-react";
+import { useUser } from "../../contexts/UserContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface QuizConfirmModalProps {
   isOpen: boolean;
@@ -11,7 +11,7 @@ interface QuizConfirmModalProps {
 const QuizConfirmModal: React.FC<QuizConfirmModalProps> = ({
   isOpen,
   onClose,
-  onConfirm
+  onConfirm,
 }) => {
   const { quizzesRemaining, isPremium, dailyLimit } = useUser();
   const { isAuthenticated } = useAuth();
@@ -37,26 +37,18 @@ const QuizConfirmModal: React.FC<QuizConfirmModalProps> = ({
             開始すると、相談チケットが1枚消費されます。
             <br />
             {isAuthenticated ? (
-              <>
-                残り相談チケット: {quizzesRemaining}枚 / {dailyLimit}枚
-              </>
+              <>残り相談チケット: {quizzesRemaining}枚</>
             ) : (
-              `ゲストユーザーの残り相談チケット: ${quizzesRemaining}枚 / ${dailyLimit}枚`
+              `ゲストユーザーの残り相談チケット: ${quizzesRemaining}枚`
             )}
           </p>
         </div>
 
         <div className="flex justify-end space-x-3">
-          <button
-            onClick={onClose}
-            className="btn-outline"
-          >
+          <button onClick={onClose} className="btn-outline">
             キャンセル
           </button>
-          <button
-            onClick={onConfirm}
-            className="btn-primary"
-          >
+          <button onClick={onConfirm} className="btn-primary">
             開始する
           </button>
         </div>

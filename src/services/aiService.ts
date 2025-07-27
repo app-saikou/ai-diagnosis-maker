@@ -190,21 +190,24 @@ export const aiService = {
         .map((a) => `質問：${a.question}\n回答：${a.answer}`)
         .join("\n\n")}
 
-この回答をもとに、今のユーザーの状態・傾向を読み取って、寄り添うような具体的な"答え"や"提案"を1つだけ返してください。
+      相談者の心に刺さり、表面的ではなく"迷いの裏の本音"を察した、めちゃくちゃ具体的な"答え"や"提案"を1つだけ返して　
       【相談結果の指針】
-      - 必ず「title（結果タイトル）」と「description（説明文）」の両方を含めてください。
-      - タイトルでは、回答から読み取れる傾向を踏まえて、「今のあなたにはこういう考えや選択もアリかも」という形を一言で提案してください。
-      - 友達との会話みたいに自然で、肩の力が抜けたカジュアルな言葉でお願いします。
-      - 無理にフォーマルな表現は使わず、普段しゃべるみたいな口調を意識してください。
-      - 回答で選ばれた選択肢をそのまま繰り返すのではなく、そこから性格や傾向を読み取ったうえで、言い換えたり深読みしたりして解釈してください。
-      - できれば、具体例(例：時間・タイミング、行動、食べ物・モノ、地名・場所)を出してください。(該当する相談の場合)
-      - ユーザーの具体的なアクションにつながるアドバイスをしてください。
-      以下のJSON形式で返してください：
+      - 必ず「title（結果タイトル）」と「description（説明文）」と「recommendedAction（おすすめアクション）」の3つを含めて
+      - タイトルでは、回答から読み取れる傾向を踏まえて、「今のあなたにはこういう考えや選択もアリかも」という形を一言で提案して
+      - 説明文では、回答から読み取れる性格や傾向を深読みして解釈し、具体的なアドバイスを提供して
+      - おすすめアクションでは、ユーザーがすぐに実践できる具体的な行動を1つ提案して（例：「週末は少し肩の力を抜いて、リラックスする時間を作ってみてね」「明日から5分だけでも、自分が好きなことをする時間を作ってみよう」）
+      - 友達との会話みたいに自然で、肩の力が抜けたカジュアルな言葉で
+      - 無理にフォーマルな表現は使わず、普段しゃべるみたいな口調を意識して
+      - 回答で選ばれた選択肢をそのまま繰り返すのではなく、そこから性格や傾向を読み取ったうえで、言い換えたり深読みしたりして解釈して
+      - できれば、具体例(例：時間・タイミング、行動、食べ物・モノ、地名・場所)を出して(該当する相談の場合)
+      - 自分の限界を超えて
+      以下のJSON形式で返して：
       {
         "results": [
           {
             "title": "結果タイトル",
-            "description": "説明文"
+            "description": "説明文",
+            "recommendedAction": "おすすめアクション"
           }
         ]
       }`
@@ -217,18 +220,19 @@ export const aiService = {
           .join("\n\n")}
         
         The result should include:
-        - Make sure to always include both the "title" and "description" fields in each result.
-        - A friendly and slightly humorous title and description, as if it's an encouraging message or a compliment from a good friend.
+        - Make sure to always include "title", "description", and "recommendedAction" fields in each result.
+        - A friendly and slightly humorous title and description, as if it's an encouraging message from a good friend.
         - Personality traits and behavioral patterns reflected in the answers.
         - Everyday "relatable" situations or habits typical of this result type.
-        - A short, positive piece of advice or encouragement.
+        - A specific, actionable recommendation in the "recommendedAction" field (e.g., "Try taking a 10-minute walk this weekend" or "Consider setting aside 5 minutes each day for something you enjoy")
         
         Return the result ONLY in the following JSON format:
         {
           "results": [
             {
               "title": "Result title",
-              "description": "Description"
+              "description": "Description",
+              "recommendedAction": "Recommended action"
             }
           ]
         }`;
@@ -240,8 +244,8 @@ export const aiService = {
           {
             role: "system",
             content: isJapanese
-              ? "あなたは相談内容に対しての結果を生成するAIアシスタントです。ユーザーの回答を分析して、パーソナライズされた洞察とアドバイスを提供します。"
-              : "You are an AI assistant that generates personality quiz results. You analyze user responses to provide personalized insights and advice.",
+              ? "あなたは相談内容に対しての結果を生成するAIアシスタントです。ユーザーの回答を分析して、パーソナライズされた洞察とアドバイスをおすすめアクションと共に提供してください。"
+              : "You are an AI assistant that generates personality quiz results. You analyze user responses to provide personalized insights, advice, and recommended actions.",
           },
           { role: "user", content: resultsPrompt },
         ],
@@ -261,6 +265,7 @@ export const aiService = {
         id: crypto.randomUUID(),
         title: result.title,
         description: result.description,
+        recommendedAction: result.recommendedAction,
         imageUrl: null, // 動的に生成されるためnullに設定
       }));
     } catch (error) {

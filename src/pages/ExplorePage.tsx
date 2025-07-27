@@ -3,110 +3,58 @@ import { useQuiz } from "../contexts/QuizContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useUser } from "../contexts/UserContext";
 import { useAuth } from "../contexts/AuthContext";
-import { AlertCircle, PlayCircle, RefreshCw, Lock } from "lucide-react";
+import { AlertCircle, PlayCircle, Lock } from "lucide-react";
 import QuizConfirmModal from "../components/ui/QuizConfirmModal";
 import AuthModal from "../components/auth/AuthModal";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
-
-type SortOption = "newest" | "popular";
+import { Quiz } from "../types";
 
 const ExplorePage = () => {
-  const { quizzes, isLoading, refreshQuizzes, getLikeCount } = useQuiz();
-  const { t, language } = useLanguage();
-  const { quizzesRemaining, isPremium, dailyLimit, canTakeQuiz } = useUser();
-  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { quizzes, refreshQuizzes } = useQuiz();
+  const { t } = useLanguage();
+  const { quizzesRemaining, isPremium } = useUser();
+  const { isAuthenticated } = useAuth();
 
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"newest" | "popular">("newest");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
 
-  // ページ読み込み時とフォーカス時にクイズリストを更新
-  useEffect(() => {
-    const handleFocus = () => {
-      refreshQuizzes();
-    };
-
-    window.addEventListener("focus", handleFocus);
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [refreshQuizzes]);
-
-  // 定期的なクイズリスト更新（30秒ごと）
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refreshQuizzes();
-    }, 30000); // 30秒ごとに更新
-
-    return () => clearInterval(interval);
-  }, [refreshQuizzes]);
-
-  // リアルタイムでquiz_likesの変化を監視し、即時リストを更新
-  useEffect(() => {
-    const channel = supabase
-      .channel("quiz_likes_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "quiz_likes",
-        },
-        (payload) => {
-          refreshQuizzes();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [refreshQuizzes]);
-
-  // ページ遷移時に正確ないいね数を取得するため、初期ロードを実行
   useEffect(() => {
     refreshQuizzes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // 依存配列を空にして、マウント時に1回だけ実行
 
-  const sortedQuizzes = [...quizzes].sort((a, b) => {
-    if (sortBy === "newest") {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    } else {
-      return b.completions + b.likes - (a.completions + a.likes);
-    }
-  });
-
-  const buttonText = {
-    newest: language === "ja" ? "新着順" : "Newest",
-    popular: language === "ja" ? "人気順" : "Most Popular",
-  };
-
-  const handleStartQuiz = (quizId: string) => {
+  const handleQuizClick = (quiz: Quiz) => {
     if (!isAuthenticated) {
       setIsAuthModalOpen(true);
       return;
     }
 
-    if (!canTakeQuiz) {
-      // 相談回数が上限に達している場合は何もしない
+    if (quizzesRemaining <= 0) {
+      // チケットが不足している場合の処理
       return;
     }
 
-    setSelectedQuizId(quizId);
+    setSelectedQuiz(quiz);
     setShowConfirmModal(true);
   };
 
-  const handleConfirmStartQuiz = () => {
-    if (!selectedQuizId) return;
-
-    navigate(`/quiz/${selectedQuizId}`);
+  const handleConfirmQuiz = () => {
+    if (selectedQuiz) {
+      navigate(`/take-quiz/${selectedQuiz.id}`);
+    }
     setShowConfirmModal(false);
-    setSelectedQuizId(null);
+    setSelectedQuiz(null);
   };
+
+  const sortedQuizzes = [...quizzes].sort((a, b) => {
+    if (sortBy === "newest") {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    } else {
+      return (b.likes || 0) - (a.likes || 0);
+    }
+  });
 
   return (
     <div>
@@ -122,14 +70,12 @@ const ExplorePage = () => {
           <AlertCircle className="h-5 w-5 text-primary-600 mt-0.5 mr-2 flex-shrink-0" />
           <div>
             <p className="text-primary-700 text-sm">
-              {language === "ja"
-                ? `残り相談チケット: ${quizzesRemaining}枚 / ${dailyLimit}枚`
-                : `${quizzesRemaining} consultation tickets remaining out of ${dailyLimit}`}
+              {t("ticketsRemaining").replace(
+                "{count}",
+                quizzesRemaining.toString()
+              )}
               <br />
-              {!isPremium &&
-                (language === "ja"
-                  ? "プレミアムにアップグレードして制限を緩和しましょう"
-                  : "Upgrade to premium to increase your daily limit")}
+              {!isPremium && t("upgradeToIncreaseLimit")}
             </p>
           </div>
         </div>
@@ -145,7 +91,7 @@ const ExplorePage = () => {
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            {buttonText.newest}
+            {t("newest")}
           </button>
           <button
             onClick={() => setSortBy("popular")}
@@ -155,94 +101,55 @@ const ExplorePage = () => {
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            {buttonText.popular}
+            {t("popular")}
           </button>
         </div>
       </div>
 
-      {isLoading ? (
+      {sortedQuizzes.length === 0 ? (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">相談を読み込み中...</p>
+          <div className="text-gray-400 mb-4">
+            <PlayCircle className="h-16 w-16 mx-auto" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            まだ相談がありません
+          </h3>
+          <p className="text-gray-600">最初の相談を作成してみましょう</p>
         </div>
-      ) : sortedQuizzes.length > 0 ? (
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedQuizzes.map((quiz) => (
-            <div key={quiz.id} className="card card-hover">
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-3">
+            <div
+              key={quiz.id}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => handleQuizClick(quiz)}
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
                     {quiz.title}
                   </h3>
                 </div>
 
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                  {quiz.description}
-                </p>
-
-                {/* 作成者名を表示 */}
-                <div className="flex items-center text-xs text-gray-500 mb-3">
-                  <span>作成者: {quiz.creatorDisplayName}</span>
-                </div>
-
-                <div className="flex justify-between items-center mt-auto">
-                  <div className="flex space-x-3 text-xs text-gray-500">
-                    <span>{quiz.completions}回相談</span>
-                    <span>{quiz.likes}いいね</span>
-                  </div>
-
-                  <button
-                    onClick={() => handleStartQuiz(quiz.id)}
-                    disabled={!canTakeQuiz}
-                    className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
-                      canTakeQuiz
-                        ? "bg-primary-600 text-white hover:bg-primary-700"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }`}
-                    title={
-                      !canTakeQuiz ? "本日の相談回数上限に達しています" : ""
-                    }
-                  >
-                    {canTakeQuiz ? (
-                      <>
-                        <PlayCircle className="h-5 w-5 mr-1" />
-                        {language === "ja" ? "相談を始める" : "Start Quiz"}
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-5 w-5 mr-1" />
-                        {language === "ja"
-                          ? "上限に達しました"
-                          : "Limit Reached"}
-                      </>
-                    )}
-                  </button>
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                  <span>{quiz.questions?.length || 0}問</span>
+                  <span>{new Date(quiz.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      ) : (
-        <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {t("noQuizzesFound")}
-          </h3>
-          <p className="text-gray-600 mb-6">{t("beFirstToCreate")}</p>
-        </div>
       )}
-
-      <QuizConfirmModal
-        isOpen={showConfirmModal}
-        onClose={() => {
-          setShowConfirmModal(false);
-          setSelectedQuizId(null);
-        }}
-        onConfirm={handleConfirmStartQuiz}
-      />
 
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      <QuizConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmQuiz}
       />
     </div>
   );

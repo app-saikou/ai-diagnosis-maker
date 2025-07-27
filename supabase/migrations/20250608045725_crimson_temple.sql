@@ -4,7 +4,7 @@
   1. New Tables
     - `quiz_likes`
       - `id` (uuid, primary key): いいねID
-      - `quiz_id` (uuid): 診断ID
+      - `quiz_id` (uuid): 相談ID
       - `user_id` (uuid): ユーザーID
       - `created_at` (timestamp): いいね日時
 

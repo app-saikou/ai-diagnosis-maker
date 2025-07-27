@@ -1,15 +1,27 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Trophy, Clock, Heart, Crown, X, User, Star, Sparkles, ChevronRight, History, Settings, Gift, Save, Edit2, Trash2 } from 'lucide-react';
-import { useUser } from '../contexts/UserContext';
-import { useQuiz } from '../contexts/QuizContext';
-import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext';
-import AuthPrompt from '../components/ui/AuthPrompt';
-import AuthModal from '../components/auth/AuthModal';
-import ProfileAvatar from '../components/ui/ProfileAvatar';
-import LoginStreakDisplay from '../components/ui/LoginStreakDisplay';
-import { supabase } from '../lib/supabase';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Heart,
+  Crown,
+  X,
+  Star,
+  ChevronRight,
+  History,
+  Settings,
+  Gift,
+  Save,
+  Edit2,
+  Trash2,
+} from "lucide-react";
+import { useUser } from "../contexts/UserContext";
+import { useQuiz } from "../contexts/QuizContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useLanguage } from "../contexts/LanguageContext";
+import AuthPrompt from "../components/ui/AuthPrompt";
+import AuthModal from "../components/auth/AuthModal";
+import ProfileAvatar from "../components/ui/ProfileAvatar";
+import LoginStreakDisplay from "../components/ui/LoginStreakDisplay";
+import { supabase } from "../lib/supabase";
 
 type FetchedQuizzes = {
   [key: string]: {
@@ -18,6 +30,7 @@ type FetchedQuizzes = {
       id: string;
       title: string;
       imageUrl?: string;
+      recommendedAction?: string;
     }>;
     createdBy: string;
   };
@@ -31,27 +44,37 @@ interface UserStats {
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user, isPremium, setIsPremium, quizzesRemaining, dailyLimit, updateDisplayName } = useUser();
+  const {
+    user,
+    isPremium,
+    setIsPremium,
+    quizzesRemaining,
+    updateDisplayName,
+    updateProfileImage,
+  } = useUser();
   const { getQuizById } = useQuiz();
-  const { t } = useLanguage();
   const { isAuthenticated, user: authUser, signOut } = useAuth();
-  
+  const { t } = useLanguage();
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(user.displayName);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [isDeleting2, setIsDeleting2] = useState(false);
+  const [isCancellingSubscription, setIsCancellingSubscription] =
+    useState(false);
+  const [showCancelSubscription, setShowCancelSubscription] = useState(false);
   const [fetchedQuizzes, setFetchedQuizzes] = useState<FetchedQuizzes>({});
   const [isLoading, setIsLoading] = useState(true);
   const [userStats, setUserStats] = useState<UserStats>({
     createdQuizzes: 0,
     totalLikes: 0,
-    totalCompletions: 0
+    totalCompletions: 0,
   });
   const [showSettings, setShowSettings] = useState(false);
-  const [profileImageUrl, setProfileImageUrl] = useState<string>('');
-  
+  const [displayCount, setDisplayCount] = useState(5);
+
   useEffect(() => {
     const fetchUserStats = async () => {
       if (!authUser) {
@@ -62,67 +85,81 @@ const ProfilePage = () => {
       try {
         // ユーザーが作成したクイズの統計を取得
         const { data: quizStats, error: statsError } = await supabase
-          .from('quizzes')
-          .select('id, likes, completions')
-          .eq('created_by', authUser.id);
+          .from("quizzes")
+          .select("id, likes, completions")
+          .eq("created_by", authUser.id);
 
         if (statsError) throw statsError;
 
         const stats = {
           createdQuizzes: quizStats?.length || 0,
-          totalLikes: quizStats?.reduce((sum, quiz) => sum + (quiz.likes || 0), 0) || 0,
-          totalCompletions: quizStats?.reduce((sum, quiz) => sum + (quiz.completions || 0), 0) || 0
+          totalLikes:
+            quizStats?.reduce((sum, quiz) => sum + (quiz.likes || 0), 0) || 0,
+          totalCompletions:
+            quizStats?.reduce(
+              (sum, quiz) => sum + (quiz.completions || 0),
+              0
+            ) || 0,
         };
 
         setUserStats(stats);
 
-        // ユーザーのプロフィール画像を取得
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('profile_image_url')
-          .eq('id', authUser.id)
-          .single();
-
-        if (userError && userError.code !== 'PGRST116') {
-          console.error('Error fetching user profile:', userError);
-        } else if (userData?.profile_image_url) {
-          setProfileImageUrl(userData.profile_image_url);
-        }
+        // ユーザーのプロフィール画像はUserContextで管理されるため、ここでは取得しない
       } catch (error) {
-        console.error('統計データの取得中にエラーが発生しました:', error);
+        console.error("統計データの取得中にエラーが発生しました:", error);
       }
     };
 
     fetchUserStats();
   }, [authUser]);
-  
+
   useEffect(() => {
     const fetchQuizzes = async () => {
+      console.log(
+        "🔍 ProfilePage: fetchQuizzes called, quizResults length:",
+        user.quizResults.length
+      );
+
       if (!user.quizResults.length) {
+        console.log(
+          "🔍 ProfilePage: No quiz results, setting loading to false"
+        );
         setIsLoading(false);
         return;
       }
 
       try {
-        const quizIds = [...new Set(user.quizResults.map(result => result.quizId))];
+        const quizIds = [
+          ...new Set(user.quizResults.map((result) => result.quizId)),
+        ];
+        console.log("🔍 ProfilePage: Quiz IDs to fetch:", quizIds);
+
         const quizzes: FetchedQuizzes = {};
 
         await Promise.all(
           quizIds.map(async (quizId) => {
+            console.log("🔍 ProfilePage: Fetching quiz:", quizId);
             const quiz = await getQuizById(quizId);
             if (quiz) {
+              console.log(
+                "🔍 ProfilePage: Quiz fetched successfully:",
+                quiz.title
+              );
               quizzes[quizId] = {
                 title: quiz.title,
                 results: quiz.results,
                 createdBy: quiz.createdBy,
               };
+            } else {
+              console.log("🔍 ProfilePage: Quiz not found:", quizId);
             }
           })
         );
 
+        console.log("🔍 ProfilePage: All quizzes fetched:", quizzes);
         setFetchedQuizzes(quizzes);
       } catch (error) {
-        console.error('クイズデータの取得中にエラーが発生しました:', error);
+        console.error("相談データの取得中にエラーが発生しました:", error);
       } finally {
         setIsLoading(false);
       }
@@ -130,13 +167,13 @@ const ProfilePage = () => {
 
     fetchQuizzes();
   }, [user.quizResults, getQuizById]);
-  
+
   if (!isAuthenticated) {
     return (
       <div className="max-w-2xl mx-auto">
         <AuthPrompt
-          title="プロフィールを表示するにはログインが必要です"
-          message="ログインして、クイズの履歴や結果を確認しましょう"
+          title={t("profileLoginRequired")}
+          message={t("profileLoginMessage")}
           onAuthClick={() => setIsAuthModalOpen(true)}
         />
         <AuthModal
@@ -148,27 +185,18 @@ const ProfilePage = () => {
   }
 
   const handleSaveDisplayName = () => {
-    if (typeof newDisplayName === 'string' && newDisplayName.trim()) {
+    if (typeof newDisplayName === "string" && newDisplayName.trim()) {
       updateDisplayName(newDisplayName.trim());
       setIsEditing(false);
     }
   };
 
   const handleProfileImageChange = async (imageUrl: string) => {
-    if (!authUser) return;
-
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ profile_image_url: imageUrl || null })
-        .eq('id', authUser.id);
-
-      if (error) throw error;
-
-      setProfileImageUrl(imageUrl);
+      await updateProfileImage(imageUrl);
     } catch (error) {
-      console.error('プロフィール画像の更新に失敗しました:', error);
-      alert('プロフィール画像の更新に失敗しました');
+      console.error("プロフィール画像の更新に失敗しました:", error);
+      alert(t("profileImageUpdateError"));
     }
   };
 
@@ -182,59 +210,118 @@ const ProfilePage = () => {
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.access_token) {
-        throw new Error('認証エラー');
+        throw new Error("認証エラー");
       }
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${session.session.access_token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.session.access_token}`,
+            "Content-Type": "application/json",
           },
         }
       );
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'アカウントの削除中にエラーが発生しました');
+        throw new Error(t("accountDeleteError"));
       }
 
       await signOut();
-      navigate('/', { replace: true });
+      navigate("/");
     } catch (error) {
-      console.error('Error deleting account:', error);
-      alert(error instanceof Error ? error.message : 'アカウントの削除中にエラーが発生しました');
+      console.error("アカウント削除エラー:", error);
+      alert(t("accountDeleteError"));
     } finally {
       setIsDeleting2(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!authUser?.id) return;
+
+    setIsCancellingSubscription(true);
+
+    try {
+      const response = await fetch(
+        "http://localhost:4242/api/cancel-subscription",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId: authUser.id }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || t("subscriptionCancelError"));
+      }
+
+      await response.json();
+
+      // UserContextのisPremiumを更新
+      setIsPremium(false);
+
+      alert(t("subscriptionCancelled"));
+      setShowCancelSubscription(false);
+    } catch (error) {
+      console.error("サブスク解約エラー:", error);
+      alert(
+        error instanceof Error ? error.message : t("subscriptionCancelError")
+      );
+    } finally {
+      setIsCancellingSubscription(false);
+    }
+  };
+
+  // Stripe Checkout連携
+  const handlePremiumClick = async () => {
+    try {
+      const userId = authUser?.id;
+      if (!userId) throw new Error(t("userIdError"));
+      const res = await fetch(
+        "http://localhost:4242/api/create-checkout-session",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        }
+      );
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (err) {
+      alert(t("paymentError"));
+      console.error(err);
     }
   };
 
   const sortedResults = [...user.quizResults].sort((a, b) => {
     return new Date(b.takenAt).getTime() - new Date(a.takenAt).getTime();
   });
-  
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('ja-JP', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric'
+    return new Intl.DateTimeFormat("ja-JP", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
     }).format(date);
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4">
+    <div className="max-w-6xl mx-auto px-2 sm:px-4">
       {/* ヘッダーセクション */}
-      <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
+      <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 mb-8">
         <div className="flex flex-col md:flex-row items-center gap-6">
           <div className="relative">
             <ProfileAvatar
               displayName={user.displayName}
-              profileImageUrl={profileImageUrl}
+              profileImageUrl={user.profileImageUrl}
               size="xl"
               editable={true}
               onImageChange={handleProfileImageChange}
@@ -245,7 +332,7 @@ const ProfilePage = () => {
               </div>
             )}
           </div>
-          
+
           <div className="flex-1 text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
               {isEditing ? (
@@ -255,13 +342,13 @@ const ProfilePage = () => {
                     value={newDisplayName}
                     onChange={(e) => setNewDisplayName(e.target.value)}
                     className="input text-xl font-bold px-3 py-1"
-                    placeholder="表示名を入力"
+                    placeholder={t("displayNamePlaceholder")}
                     maxLength={30}
                   />
                   <button
                     onClick={handleSaveDisplayName}
                     className="btn-primary p-2"
-                    title="保存"
+                    title={t("save")}
                   >
                     <Save className="h-5 w-5" />
                   </button>
@@ -271,7 +358,7 @@ const ProfilePage = () => {
                       setNewDisplayName(user.displayName);
                     }}
                     className="btn-outline p-2"
-                    title="キャンセル"
+                    title={t("cancel")}
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -282,7 +369,7 @@ const ProfilePage = () => {
                   <button
                     onClick={() => setIsEditing(true)}
                     className="text-gray-500 hover:text-primary-600 p-1"
-                    title="名前を編集"
+                    title={t("editName")}
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
@@ -295,23 +382,26 @@ const ProfilePage = () => {
               )}
             </div>
             <p className="text-gray-600 mb-4">
-              本日の相談チケット: {quizzesRemaining}枚 / {dailyLimit}枚
+              {t("todayConsultationTickets").replace(
+                "{count}",
+                quizzesRemaining.toString()
+              )}
             </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-3">
-              <button 
+              <button
                 onClick={() => setShowSettings(true)}
                 className="btn-outline flex items-center text-gray-600 hover:text-gray-800"
               >
                 <Settings className="h-4 w-4 mr-1.5" />
-                設定
+                {t("settings")}
               </button>
               {!isPremium && (
-                <button 
-                  onClick={() => setIsPremium(true)}
+                <button
+                  onClick={handlePremiumClick}
                   className="btn-primary flex items-center text-sm"
                 >
                   <Gift className="h-4 w-4 mr-1.5" />
-                  プレミアムに登録
+                  {t("premiumRegistration")}
                 </button>
               )}
             </div>
@@ -324,11 +414,13 @@ const ProfilePage = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">設定</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {t("settings")}
+              </h2>
               <button
                 onClick={() => setShowSettings(false)}
                 className="text-gray-500 hover:text-gray-700 rounded-full p-1 hover:bg-gray-100 transition-colors"
-                aria-label="閉じる"
+                aria-label={t("close")}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -336,29 +428,46 @@ const ProfilePage = () => {
 
             <div className="space-y-4">
               <div className="border-b border-gray-200 pb-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">アカウント管理</h3>
+                <h3 className="text-sm font-medium text-gray-900 mb-2">
+                  {t("accountManagement")}
+                </h3>
                 <p className="text-xs text-gray-600 mb-3">
-                  アカウントを削除すると、すべてのデータが完全に削除されます。この操作は取り消せません。
+                  {t("accountDeleteWarning")}
                 </p>
-                <button 
+                <button
                   onClick={() => {
                     setShowSettings(false);
                     setIsDeleting(true);
-                  }} 
+                  }}
                   className="w-full btn-outline flex items-center justify-center text-red-600 hover:bg-red-50 hover:border-red-200"
                   disabled={isDeleting2}
                 >
                   <Trash2 className="h-4 w-4 mr-1.5" />
-                  {isDeleting2 ? '削除中...' : 'アカウントを削除'}
+                  {isDeleting2 ? t("deleting") : t("deleteAccount")}
                 </button>
               </div>
+
+              {isPremium && (
+                <div className="pt-2">
+                  <button
+                    onClick={() => setShowCancelSubscription(true)}
+                    className="w-full btn-outline flex items-center justify-center text-orange-600 hover:bg-orange-50 hover:border-orange-200"
+                    disabled={isCancellingSubscription}
+                  >
+                    <X className="h-4 w-4 mr-1.5" />
+                    {isCancellingSubscription
+                      ? t("cancelling")
+                      : t("cancelSubscription")}
+                  </button>
+                </div>
+              )}
 
               <div className="pt-2">
                 <button
                   onClick={() => setShowSettings(false)}
                   className="w-full btn-primary"
                 >
-                  閉じる
+                  {t("close")}
                 </button>
               </div>
             </div>
@@ -366,23 +475,19 @@ const ProfilePage = () => {
         </div>
       )}
 
-      {/* アカウント削除モーダル */}
+      {/* アカウント削除 */}
       {isDeleting && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="text-center mb-6">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="h-6 w-6 text-red-600" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">アカウントを削除</h2>
-              <p className="text-gray-600 text-sm">
-                この操作は取り消せません。アカウントを削除すると、すべての相談データが完全に削除されます。
-              </p>
-            </div>
-            
-            <div className="mb-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              {t("accountDeleteConfirmation")}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {t("accountDeleteDescription")}
+            </p>
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                確認のため、表示名「<span className="font-bold text-red-600">{user.displayName}</span>」を入力してください
+                {t("confirmDisplayName").replace("{name}", user.displayName)}
               </label>
               <input
                 type="text"
@@ -392,31 +497,71 @@ const ProfilePage = () => {
                 placeholder={user.displayName}
               />
             </div>
-            
+
             <div className="flex flex-col gap-3">
               <button
                 onClick={handleDeleteAccount}
-                disabled={deleteConfirmation !== user.displayName || isDeleting2}
+                disabled={
+                  deleteConfirmation !== user.displayName || isDeleting2
+                }
                 className="btn-primary bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 {isDeleting2 ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    削除中...
+                    {t("deleting")}
                   </>
                 ) : (
-                  'アカウントを削除'
+                  t("accountDeleteButton")
                 )}
               </button>
               <button
                 onClick={() => {
                   setIsDeleting(false);
-                  setDeleteConfirmation('');
+                  setDeleteConfirmation("");
                 }}
                 className="btn-outline"
                 disabled={isDeleting2}
               >
-                キャンセル
+                {t("cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* サブスク解除確認 */}
+      {showCancelSubscription && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">
+              {t("subscriptionCancelConfirmation")}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {t("subscriptionCancelDescription")}
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleCancelSubscription}
+                disabled={isCancellingSubscription}
+                className="btn-primary bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                {isCancellingSubscription ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {t("cancelling")}
+                  </>
+                ) : (
+                  t("subscriptionCancelButton")
+                )}
+              </button>
+              <button
+                onClick={() => setShowCancelSubscription(false)}
+                className="btn-outline"
+                disabled={isCancellingSubscription}
+              >
+                {t("cancel")}
               </button>
             </div>
           </div>
@@ -432,42 +577,46 @@ const ProfilePage = () => {
       </div>
 
       {/* 統計カード */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
           <div className="flex items-start">
             <div className="bg-primary-100 rounded-full p-3">
               <Star className="h-6 w-6 text-primary-600" />
             </div>
             <div className="ml-4">
-              <h3 className="text-lg font-semibold">作成した相談</h3>
+              <h3 className="text-lg font-semibold">
+                {t("createdConsultations")}
+              </h3>
               <p className="text-3xl font-bold text-primary-600 mt-1">
                 {userStats.createdQuizzes}
               </p>
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm p-6">
+
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
           <div className="flex items-start">
             <div className="bg-secondary-100 rounded-full p-3">
               <History className="h-6 w-6 text-secondary-600" />
             </div>
             <div className="ml-4">
-              <h3 className="text-lg font-semibold">答えてもらった相談</h3>
+              <h3 className="text-lg font-semibold">
+                {t("answeredConsultations")}
+              </h3>
               <p className="text-3xl font-bold text-secondary-600 mt-1">
                 {sortedResults.length}
               </p>
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm p-6">
+
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
           <div className="flex items-start">
             <div className="bg-yellow-100 rounded-full p-3">
               <Heart className="h-6 w-6 text-yellow-600" />
             </div>
             <div className="ml-4">
-              <h3 className="text-lg font-semibold">獲得いいね</h3>
+              <h3 className="text-lg font-semibold">{t("totalLikes")}</h3>
               <p className="text-3xl font-bold text-yellow-600 mt-1">
                 {userStats.totalLikes}
               </p>
@@ -476,61 +625,93 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* 診断履歴 */}
+      {/* 相談履歴 */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-xl font-semibold">相談履歴</h2>
+        <div className="p-4 sm:p-6 border-b border-gray-100">
+          <h2 className="text-xl font-semibold">{t("consultationHistory")}</h2>
         </div>
-        
+
         {isLoading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">相談履歴を読み込み中...</p>
+            <p className="mt-4 text-gray-600">{t("loadingHistory")}</p>
           </div>
         ) : sortedResults.length > 0 ? (
           <div className="divide-y divide-gray-100">
-            {sortedResults.map((result) => {
+            {sortedResults.slice(0, displayCount).map((result) => {
               const quiz = fetchedQuizzes[result.quizId];
               if (!quiz) return null;
-              
-              const quizResult = quiz.results.find(r => r.id === result.resultId);
+
+              const quizResult = quiz.results.find(
+                (r) => r.id === result.resultId
+              );
               if (!quizResult) return null;
-              
+
               const isCreator = quiz.createdBy === authUser?.id;
-              
+
               return (
-                <div 
-                  key={result.takenAt} 
-                  className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/results/${result.quizId}?result=${result.resultId}`)}
+                <div
+                  key={result.takenAt}
+                  className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() =>
+                    navigate(
+                      `/results/${result.quizId}?result=${result.resultId}`
+                    )
+                  }
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      {quizResult.imageUrl ? (
-                        <img 
-                          src={quizResult.imageUrl} 
-                          alt={quizResult.title}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                          <Trophy className="h-6 w-6 text-primary-600" />
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-900">{quiz.title}</h3>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {quiz.title}
+                        </h3>
                         <div className="flex items-center gap-2 mt-1">
                           <p className="text-sm text-primary-600">
-                            結果: {quizResult.title}
+                            {t("result")}: {quizResult.title}
                           </p>
+                        </div>
+                        {quizResult.recommendedAction && (
+                          <div
+                            className="mt-2 p-2 bg-primary-50 border border-primary-200 rounded-lg cursor-help"
+                            title={quizResult.recommendedAction}
+                          >
+                            <div className="flex items-start gap-2">
+                              <span className="text-primary-600 text-xs flex-shrink-0">
+                                💡
+                              </span>
+                              <p className="text-xs text-primary-700 line-clamp-2">
+                                {quizResult.recommendedAction.length > 60
+                                  ? `${quizResult.recommendedAction.substring(
+                                      0,
+                                      60
+                                    )}...`
+                                  : quizResult.recommendedAction}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {/* デスクトップ用作成者表示 */}
+                        <div className="hidden md:block mt-1">
                           <span className="text-xs text-gray-500">
-                            作成者: {isCreator ? user.displayName : 'ゲストユーザー'}
+                            {t("creator")}:{" "}
+                            {isCreator ? user.displayName : t("guestUser")}
                           </span>
+                        </div>
+                        {/* モバイル用作成者と日時表示 */}
+                        <div className="md:hidden mt-2 space-y-1">
+                          <div className="text-xs text-gray-500">
+                            {t("creator")}:{" "}
+                            {isCreator ? user.displayName : t("guestUser")}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {formatDate(result.takenAt)}
+                          </div>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center">
+
+                    {/* デスクトップ用日時表示 */}
+                    <div className="hidden md:flex items-center">
                       <span className="text-sm text-gray-500 mr-3">
                         {formatDate(result.takenAt)}
                       </span>
@@ -540,6 +721,16 @@ const ProfilePage = () => {
                 </div>
               );
             })}
+            {displayCount < sortedResults.length && (
+              <div className="p-4 text-center">
+                <button
+                  onClick={() => setDisplayCount((prev) => prev + 5)}
+                  className="btn-outline text-primary-600 hover:text-primary-700 hover:bg-primary-50"
+                >
+                  {t("showMore")}
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="p-8 text-center">
@@ -547,16 +738,14 @@ const ProfilePage = () => {
               <History className="h-8 w-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              まだ相談履歴がありません
+              {t("noHistoryYet")}
             </h3>
-            <p className="text-gray-600 mb-6">
-              質問に答えて、答えを発見しましょう！
-            </p>
+            <p className="text-gray-600 mb-6">{t("noHistoryDescription")}</p>
             <button
-              onClick={() => navigate('/explore')}
+              onClick={() => navigate("/explore")}
               className="btn-primary"
             >
-              相談内容を探す
+              {t("findConsultations")}
             </button>
           </div>
         )}

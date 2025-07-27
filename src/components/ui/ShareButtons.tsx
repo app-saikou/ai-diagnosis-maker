@@ -4,7 +4,7 @@ import xLogo from "../../assets/logo-white.png";
 import { ShareMetadata } from "../../types";
 
 const ShareButtons: FC<ShareMetadata> = ({ url, title }) => {
-  // タイトルから診断名と結果を抽出
+  // タイトルから相談名と結果を抽出
   const [resultTitle, quizTitle] = title.split(" - ").reverse();
 
   // 新しい共有テキストフォーマット

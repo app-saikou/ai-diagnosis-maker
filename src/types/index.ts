@@ -1,4 +1,4 @@
-export type QuizMode = 'quick' | 'standard' | 'deep';
+export type QuizMode = "quick" | "standard" | "deep";
 
 export interface QuizModeConfig {
   name: string;
@@ -23,6 +23,7 @@ export interface QuizResult {
   title: string;
   description: string;
   imageUrl?: string;
+  recommendedAction?: string;
 }
 
 export interface Quiz {
@@ -51,11 +52,13 @@ export interface UserQuizResult {
 export interface User {
   isPremium: boolean;
   quizzesTakenToday: number;
+  ticket_count?: number;
   quizResults: UserQuizResult[];
   lastReset: string;
   displayName: string;
   consecutiveLoginDays: number;
   lastLoginDate?: string;
+  profileImageUrl?: string;
 }
 
 export interface ShareMetadata {

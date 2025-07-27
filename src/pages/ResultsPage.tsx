@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useQuiz } from "../contexts/QuizContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useUser } from "../contexts/UserContext";
 import ShareButtons from "../components/ui/ShareButtons";
 import ShareMetaTags from "../components/ui/ShareMetaTags";
 import { imageService } from "../services/imageService";
@@ -23,15 +24,18 @@ import { ShareMetadata, Quiz, QuizResult } from "../types";
 import { supabase } from "../lib/supabase";
 import QuizConfirmModal from "../components/ui/QuizConfirmModal";
 import ImageModal from "../components/ui/ImageModal";
+import { useLanguage } from "../contexts/LanguageContext";
 
 const ResultsPage = () => {
-  const { quizId } = useParams();
+  const navigate = useNavigate();
+  const { quizId } = useParams<{ quizId: string }>();
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const resultId = searchParams.get("result");
-  const navigate = useNavigate();
 
   const { getQuizById, refreshQuizzes, getLikeCount } = useQuiz();
   const { user: authUser } = useAuth();
+  const { quizzesRemaining } = useUser();
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +62,15 @@ const ResultsPage = () => {
 
   useEffect(() => {
     const loadResult = async () => {
+      console.log(
+        "🔍 ResultsPage: URL parameters - id:",
+        quizId,
+        "resultId:",
+        resultId
+      );
+
       if (!quizId || !resultId) {
+        console.log("🔍 ResultsPage: Missing URL parameters");
         setError("URLが無効です");
         setIsLoading(false);
         return;
@@ -67,7 +79,7 @@ const ResultsPage = () => {
       try {
         const loadedQuiz = await getQuizById(quizId);
         if (!loadedQuiz) {
-          setError("クイズが見つかりませんでした");
+          setError("相談が見つかりませんでした");
           setIsLoading(false);
           return;
         }
@@ -97,16 +109,18 @@ const ResultsPage = () => {
           id: resultData.id,
           title: resultData.title,
           description: resultData.description,
+          recommendedAction: resultData.recommended_action,
           imageUrl: resultData.image_url,
         };
 
         setResult(loadedResult);
 
         const generatedImage = await imageService.generateAdvancedShareImage({
-          appTitle: "AIだけど相談ある？",
+          appTitle: "AIだけどなにか相談ある？",
           quizTitle: loadedQuiz.title,
           resultTitle: loadedResult.title,
           resultDescription: loadedResult.description,
+          recommendedAction: loadedResult.recommendedAction,
         });
         setGeneratedImageUrl(generatedImage);
 
@@ -248,6 +262,16 @@ const ResultsPage = () => {
   const handleStartQuiz = () => {
     if (!quizId) return;
 
+    // チケット不足の場合はトーストメッセージを表示
+    if (quizzesRemaining <= 0) {
+      setToast({
+        message:
+          "相談チケットが不足しています。チケットを購入するか、明日までお待ちください。",
+        type: "info",
+      });
+      return;
+    }
+
     // 確認モーダルを表示
     setShowConfirmModal(true);
   };
@@ -255,7 +279,7 @@ const ResultsPage = () => {
   const handleConfirmStartQuiz = () => {
     if (!quizId) return;
 
-    // 確認済みフラグを付けて診断ページに遷移
+    // 確認済みフラグを付けて相談ページに遷移
     navigate(`/quiz/${quizId}`, {
       state: { confirmedStart: true },
     });
@@ -300,7 +324,7 @@ const ResultsPage = () => {
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600"></div>
-          <p className="mt-4 text-gray-600">診断結果を読み込んでいます...</p>
+          <p className="mt-4 text-gray-600">相談結果を読み込んでいます...</p>
         </div>
       </div>
     );
@@ -324,7 +348,7 @@ const ResultsPage = () => {
 
   if (!quiz || !result) return null;
 
-  // ユーザーIDと診断の作成者IDを比較
+  // ユーザーIDと相談の作成者IDを比較
   const isQuizCreator = authUser?.id && quiz.createdBy === authUser.id;
   // クイズがすでにテンプレートとして保存されているかチェック
   const isAlreadyTemplate = quiz.isTemplate === true;
@@ -375,7 +399,7 @@ const ResultsPage = () => {
         </div>
       </div>
 
-      {/* 診断結果カード */}
+      {/* 相談結果カード */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
         <div className="bg-gradient-to-r from-primary-600 to-primary-400 p-6 flex items-center">
           <div className="bg-white/20 rounded-full p-3">
@@ -416,13 +440,73 @@ const ResultsPage = () => {
                 </p>
               </div>
 
+              {result.recommendedAction && (
+                <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                        <span className="text-primary-600 text-sm font-bold">
+                          💡
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-primary-800 mb-1">
+                        {t("recommendedAction")}
+                      </h4>
+                      <p className="text-sm text-primary-700">
+                        {result.recommendedAction}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-3 mt-8">
-                <button
-                  onClick={handleStartQuiz}
-                  className="btn-primary flex items-center"
-                >
-                  もう一度診断する
-                </button>
+                {quizzesRemaining > 0 ? (
+                  <div className="relative">
+                    <button
+                      onClick={handleStartQuiz}
+                      className="btn-primary flex items-center cursor-pointer"
+                    >
+                      もう一度相談する
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-full bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                          <span className="text-orange-600 text-sm font-bold">
+                            !
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-orange-800 mb-1">
+                          相談チケットが不足しています
+                        </h4>
+                        <p className="text-sm text-orange-700 mb-3">
+                          もう一度相談するには、チケットを購入するか明日の無料チケットをお待ちください。
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => navigate("/pricing")}
+                            className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors"
+                          >
+                            チケットを購入
+                          </button>
+                          <button
+                            onClick={() => navigate("/explore")}
+                            className="bg-white text-orange-600 border border-orange-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-50 transition-colors"
+                          >
+                            他の相談を探す
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <button
                   onClick={() => navigate("/create")}

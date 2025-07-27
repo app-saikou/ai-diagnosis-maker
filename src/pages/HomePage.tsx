@@ -6,10 +6,7 @@ import {
   Sparkles,
   Wand,
   Infinity,
-  Star,
-  Zap,
   Shield,
-  Clock,
 } from "lucide-react";
 import { useQuiz } from "../contexts/QuizContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -18,9 +15,8 @@ import { Quiz } from "../types";
 
 const HomePage = () => {
   const { quizzes, refreshQuizzes } = useQuiz();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [featuredQuizzes, setFeaturedQuizzes] = useState<Quiz[]>([]);
-  const [activeFeature, setActiveFeature] = useState(0);
 
   useEffect(() => {
     if (quizzes.length > 0) {
@@ -43,37 +39,28 @@ const HomePage = () => {
 
   const features = [
     {
-      icon: <Wand className="h-6 w-6 text-primary-600" />,
-      title: language === "ja" ? "AIによる自動生成" : "AI Generation",
-      description:
-        language === "ja"
-          ? "相談内容を入力するだけで、AIが診断形式で回答を自動生成します。"
-          : "Just enter a title and let AI generate engaging personality quizzes for you.",
+      icon: <span className="text-3xl">🤖</span>,
+      title: t("aiPoweredAnswers"),
+      description: t("aiPoweredAnswersDescription"),
       color: "primary",
     },
     {
-      icon: <Star className="h-6 w-6 text-yellow-600" />,
-      title: language === "ja" ? "カスタマイズ可能" : "Customizable",
-      description:
-        language === "ja"
-          ? "質問、選択肢、結果を自由にカスタマイズして、あなただけの相談を作成できます。"
-          : "Customize questions, options, and results to create your unique personality quiz.",
+      icon: <span className="text-3xl">🎟️</span>,
+      title: t("freeConsultations"),
+      description: t("freeConsultationsDescription"),
       color: "yellow",
     },
     {
-      icon: <Zap className="h-6 w-6 text-blue-600" />,
-      title: language === "ja" ? "即時共有可能" : "Instant Sharing",
-      description:
-        language === "ja"
-          ? "相談結果をすぐにSNSで共有できます。友達や家族と楽しみましょう。"
-          : "Share your quizzes instantly on social media. Have fun with friends and family.",
+      icon: <span className="text-3xl">📤</span>,
+      title: t("shareResults"),
+      description: t("shareResultsDescription"),
       color: "blue",
     },
   ];
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setActiveFeature((prev) => (prev + 1) % features.length);
+      // setActiveFeature((prev) => (prev + 1) % features.length);
     }, 5000);
 
     return () => clearInterval(timer);
@@ -101,7 +88,7 @@ const HomePage = () => {
                 </h1>
 
                 <p className="text-xl text-gray-700 max-w-2xl leading-relaxed">
-                  {t("createQuizDescription")}
+                  {t("consultationDescription")}
                 </p>
               </div>
 
@@ -160,11 +147,9 @@ const HomePage = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">
-                        AIだけど相談ある？
+                        {t("appName")}
                       </h3>
-                      <p className="text-sm text-gray-600">
-                        あなたの相談を作成
-                      </p>
+                      <p className="text-sm text-gray-600">{t("create")}</p>
                     </div>
                   </div>
 
@@ -198,46 +183,37 @@ const HomePage = () => {
       {/* Features Section */}
       <section className="py-16 bg-gradient-to-b from-white to-gray-50">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">
-            {language === "ja" ? "主な機能" : "Key Features"}
-          </h2>
+          <h2 className="text-3xl font-bold mb-4">{t("keyFeatures")}</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            {language === "ja"
-              ? "AIの力を活用して、魅力的な相談を簡単に作成できます"
-              : "Leverage the power of AI to create engaging personality quizzes with ease"}
+            {t("keyFeaturesDescription")}
           </p>
         </div>
 
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
+            {features.map((feature, idx) => (
               <div
-                key={index}
+                key={idx}
                 className={`
-                  relative overflow-hidden rounded-2xl p-6 transition-all duration-300
-                  ${
-                    index === activeFeature
-                      ? "scale-105 shadow-xl"
-                      : "scale-100 shadow-md"
+                  group relative flex flex-col items-center text-center
+                  rounded-2xl p-8 shadow-md bg-white
+                  transition-all duration-300
+                  hover:shadow-xl hover:-translate-y-2
+                  border-t-4 ${
+                    feature.color === "primary"
+                      ? "border-primary-500"
+                      : feature.color === "yellow"
+                      ? "border-yellow-400"
+                      : "border-blue-400"
                   }
-                  bg-white hover:shadow-lg hover:-translate-y-1
                 `}
               >
-                <div
-                  className={`
-                  absolute top-0 left-0 w-1 h-full
-                  bg-${feature.color}-500
-                `}
-                ></div>
-                <div
-                  className={`
-                  w-12 h-12 rounded-full mb-4 flex items-center justify-center
-                  bg-${feature.color}-100
-                `}
-                >
-                  {feature.icon}
+                <div className="mb-4">
+                  <span className="text-5xl block group-hover:scale-110 transition-transform">
+                    {feature.icon}
+                  </span>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>
               </div>
             ))}
@@ -249,33 +225,42 @@ const HomePage = () => {
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-primary-600 mb-2">
-                1000+
+            {/* リッチな特徴カード */}
+            <div className="flex flex-col items-center text-center rounded-2xl p-8 shadow-md bg-primary-50 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-b-4 border-primary-500">
+              <div className="mb-4 text-4xl bg-primary-100 rounded-full w-16 h-16 flex items-center justify-center">
+                🚀
               </div>
-              <div className="text-gray-600">
-                {language === "ja" ? "作成された相談" : "Quizzes Created"}
+              <div className="text-xl font-bold mb-2 text-primary-700">
+                {t("startConsultation")}
               </div>
+              <div className="text-gray-700">{t("yourConsultation")}</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-secondary-600 mb-2">
-                50K+
+            <div className="flex flex-col items-center text-center rounded-2xl p-8 shadow-md bg-yellow-50 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-b-4 border-yellow-400">
+              <div className="mb-4 text-4xl bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center">
+                💡
               </div>
-              <div className="text-gray-600">
-                {language === "ja" ? "月間ユーザー" : "Monthly Users"}
+              <div className="text-xl font-bold mb-2 text-yellow-700">
+                {t("easyExperience")}
               </div>
+              <div className="text-gray-700">{t("aiSupport")}</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-accent-600 mb-2">4.8</div>
-              <div className="text-gray-600">
-                {language === "ja" ? "平均評価" : "Average Rating"}
+            <div className="flex flex-col items-center text-center rounded-2xl p-8 shadow-md bg-accent-50 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-b-4 border-accent-500">
+              <div className="mb-4 text-4xl bg-accent-100 rounded-full w-16 h-16 flex items-center justify-center">
+                🛡️
               </div>
+              <div className="text-xl font-bold mb-2 text-accent-700">
+                {t("privacy")}
+              </div>
+              <div className="text-gray-700">{t("privacyDescription")}</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-yellow-600 mb-2">98%</div>
-              <div className="text-gray-600">
-                {language === "ja" ? "ユーザー満足度" : "User Satisfaction"}
+            <div className="flex flex-col items-center text-center rounded-2xl p-8 shadow-md bg-yellow-50 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-b-4 border-yellow-400">
+              <div className="mb-4 text-4xl bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center">
+                📝
               </div>
+              <div className="text-xl font-bold mb-2 text-yellow-700">
+                {t("reflectYourVoice")}
+              </div>
+              <div className="text-gray-700">{t("feedback")}</div>
             </div>
           </div>
         </div>
@@ -287,20 +272,14 @@ const HomePage = () => {
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h2 className="text-2xl font-bold mb-2">
-                  {language === "ja" ? "人気の相談" : "Popular Quizzes"}
-                </h2>
-                <p className="text-gray-600">
-                  {language === "ja"
-                    ? "みんなが楽しんでいる相談をチェックしましょう"
-                    : "Check out what others are enjoying"}
-                </p>
+                <h2 className="text-2xl font-bold mb-2">{t("popular")}</h2>
+                <p className="text-gray-600">{t("explore")}</p>
               </div>
               <Link
                 to="/explore"
                 className="text-primary-600 hover:text-primary-700 flex items-center group"
               >
-                {language === "ja" ? "すべて見る" : "See All"}
+                {t("explore")}
                 <ArrowRight className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
@@ -321,78 +300,41 @@ const HomePage = () => {
             <div className="px-6 py-12 md:p-12 flex flex-col md:flex-row items-center">
               <div className="flex-1 text-white mb-8 md:mb-0">
                 <h2 className="text-3xl font-bold mb-4">
-                  {language === "ja"
-                    ? "プレミアムで可能性が広がる"
-                    : "Unlock More with Premium"}
+                  {t("unlockWithPremium")}
                 </h2>
                 <ul className="space-y-4">
                   <li className="flex items-start">
                     <Infinity className="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" />
-                    <span>
-                      {language === "ja"
-                        ? "無制限の相談作成で、より多くのアイデアを形に"
-                        : "Create unlimited quizzes and bring more ideas to life"}
-                    </span>
+                    <span>{t("unlimitedConsultations")}</span>
                   </li>
                   <li className="flex items-start">
                     <Shield className="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" />
-                    <span>
-                      {language === "ja"
-                        ? "広告なしでクリーンな体験を"
-                        : "Ad-free experience for clean interface"}
-                    </span>
-                  </li>
-                  <li className="flex items-start">
-                    <Clock className="h-5 w-5 mr-3 flex-shrink-0 mt-0.5" />
-                    <span>
-                      {language === "ja"
-                        ? "詳細な分析と履歴管理"
-                        : "Detailed analytics and history tracking"}
-                    </span>
+                    <span>{t("adFreeExperience")}</span>
                   </li>
                 </ul>
-                <button className="mt-8 bg-white text-primary-600 px-8 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors">
-                  {language === "ja"
-                    ? "プレミアムを始める"
-                    : "Get Started with Premium"}
-                </button>
+                <Link
+                  to="/pricing"
+                  className="mt-8 bg-white text-primary-600 px-8 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-colors block text-center"
+                >
+                  {t("startPremium")}
+                </Link>
               </div>
 
               <div className="flex-1 flex justify-center">
                 <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-8 max-w-sm w-full">
                   <div className="text-white text-lg font-medium mb-6">
-                    {language === "ja" ? "プレミアム特典" : "Premium Benefits"}
+                    {t("premiumMember")}
                   </div>
                   <div className="space-y-4">
                     <div className="bg-white bg-opacity-10 p-4 rounded-lg flex items-center">
                       <div className="h-4 w-4 bg-green-400 rounded-full mr-3"></div>
                       <span className="text-white">
-                        {language === "ja"
-                          ? "無制限の相談作成"
-                          : "Unlimited Quizzes"}
+                        {t("unlimitedConsultations")}
                       </span>
                     </div>
                     <div className="bg-white bg-opacity-10 p-4 rounded-lg flex items-center">
                       <div className="h-4 w-4 bg-green-400 rounded-full mr-3"></div>
-                      <span className="text-white">
-                        {language === "ja" ? "広告なし" : "No Ads"}
-                      </span>
-                    </div>
-                    <div className="bg-white bg-opacity-10 p-4 rounded-lg flex items-center">
-                      <div className="h-4 w-4 bg-green-400 rounded-full mr-3"></div>
-                      <span className="text-white">
-                        {language === "ja"
-                          ? "プレミアムテンプレート"
-                          : "Premium Templates"}
-                      </span>
-                    </div>
-                    <div className="bg-white bg-opacity-10 p-4 rounded-lg flex items-center">
-                      <div className="h-4 w-4 bg-green-400 rounded-full mr-3"></div>
-                      <span className="text-white">
-                        {language === "ja"
-                          ? "詳細な分析"
-                          : "Detailed Analytics"}
-                      </span>
+                      <span className="text-white">{t("noAds")}</span>
                     </div>
                   </div>
                 </div>

@@ -3,9 +3,9 @@
 
   1. New Columns
     - `profile_image_url` (text): プロフィール画像URL
-    - `total_quizzes_taken` (integer): 総診断受診回数
+    - `total_quizzes_taken` (integer): 総相談回数
     - `consecutive_login_days` (integer): 連続ログイン日数
-    - `total_quizzes_created` (integer): 総診断作成回数
+    - `total_quizzes_created` (integer): 総相談作成回数
     - `last_login_date` (date): 最終ログイン日
     - `stripe_customer_id` (text): Stripe顧客ID
     - `stripe_subscription_id` (text): StripeサブスクリプションID

@@ -10,7 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.7",
+    "@sendgrid/mail": "^8.1.5",
+    "@supabase/supabase-js": "^2.50.4",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
     "framer-motion": "^11.0.6",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.344.0",
@@ -20,7 +24,9 @@
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
     "react-router-dom": "^6.22.1",
+    "resend": "^4.7.0",
     "start": "^5.1.0",
+    "stripe": "^14.25.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

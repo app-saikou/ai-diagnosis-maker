@@ -22,7 +22,7 @@ const ShareMetaTags: React.FC<ShareMetaTagsProps> = ({ metadata }) => {
       )}
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
-      <meta property="og:site_name" content="AIだけど相談ある？" />
+      <meta property="og:site_name" content="AIだけどなにか相談ある？" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
@@ -35,7 +35,7 @@ const ShareMetaTags: React.FC<ShareMetaTagsProps> = ({ metadata }) => {
 
       {/* Additional meta tags */}
       <meta name="description" content={metadata.description} />
-      <meta name="keywords" content="AI相談, 診断テスト, パーソナリティ診断" />
+      <meta name="keywords" content="AI相談, 相談AI, AIアドバイス" />
     </Helmet>
   );
 };

@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { User } from "../types";
 import { useAuth } from "./AuthContext";
+import { useLanguage } from "./LanguageContext";
 import { supabase } from "../lib/supabase";
 import LoadingOverlay from "../components/ui/LoadingOverlay";
 
@@ -26,11 +27,13 @@ interface UserContextType {
     answers: Record<string, string>
   ) => Promise<void>;
   updateDisplayName: (name: string) => Promise<void>;
+  updateProfileImage: (imageUrl: string) => Promise<void>;
 }
 
 const defaultUser: User = {
   isPremium: false,
   quizzesTakenToday: 0,
+  ticket_count: 0,
   quizResults: [],
   lastReset: new Date().toISOString().split("T")[0],
   displayName: "ゲストユーザー",
@@ -56,6 +59,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     user: authUser,
     isLoading: authIsLoading,
   } = useAuth();
+  const { t } = useLanguage();
   const [user, setUser] = useState<User>(defaultUser);
   const [isLoading, setIsLoading] = useState(false);
   const [timeToNextReset, setTimeToNextReset] = useState<string>("");
@@ -63,7 +67,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const isPremium = user.isPremium;
   const dailyLimit = isPremium ? 30 : 3;
-  const quizzesRemaining = Math.max(0, dailyLimit - user.quizzesTakenToday);
+  const quizzesRemaining = Math.max(
+    0,
+    dailyLimit - user.quizzesTakenToday + (user.ticket_count || 0)
+  );
   const canTakeQuiz = quizzesRemaining > 0;
 
   // 次のリセット時刻までの残り時間を計算する関数
@@ -78,18 +85,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     const timeDiff = nextMidnight.getTime() - jstNow.getTime();
 
     if (timeDiff <= 0) {
-      return "まもなくリセットされます";
+      return t("resettingSoon");
     }
 
     const hours = Math.floor(timeDiff / (1000 * 60 * 60));
     const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
 
     if (hours > 0) {
-      return `あと${hours}時間${minutes}分でリセットされます`;
+      return t("resetInHoursMinutes")
+        .replace("{hours}", hours.toString())
+        .replace("{minutes}", minutes.toString());
     } else {
-      return `あと${minutes}分でリセットされます`;
+      return t("resetInMinutes").replace("{minutes}", minutes.toString());
     }
-  }, []);
+  }, [t]);
 
   // 1分ごとに残り時間を更新
   useEffect(() => {
@@ -104,13 +113,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // ユーザーデータをロードする関数（useCallbackでメモ化）
   const loadUserData = useCallback(async () => {
-    console.log("🔄 UserContext: loadUserData function called");
-    console.log("📊 UserContext: Current state check:", {
-      authIsLoading,
-      isAuthenticated,
-      authUserId: authUser?.id || "No auth user",
-    });
-
     // AuthContextがまだロード中の場合は早期リターン（setIsLoadingを呼ばない）
     if (authIsLoading) {
       console.log("⏸️ UserContext: AuthContext is still loading, waiting...");
@@ -169,7 +171,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         const isAnonymous = authUser.is_anonymous || false;
         const defaultUserForAuth = {
           ...defaultUser,
-          displayName: isAnonymous ? "ゲストユーザー" : defaultUser.displayName,
+          displayName: isAnonymous ? t("guestUser") : defaultUser.displayName,
         };
         setUser(defaultUserForAuth);
       } else {
@@ -177,10 +179,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         const loadedUser = {
           isPremium: userData.is_premium || false,
           quizzesTakenToday: userData.quizzes_taken_today || 0,
+          ticket_count: userData.ticket_count || 0,
           lastReset: userData.last_reset || defaultUser.lastReset,
           displayName: userData.display_name || defaultUser.displayName,
           consecutiveLoginDays: userData.consecutive_login_days || 1,
           lastLoginDate: userData.last_login_date || defaultUser.lastLoginDate,
+          profileImageUrl: userData.profile_image_url || undefined,
           quizResults: [],
         };
         setUser(loadedUser);
@@ -292,32 +296,95 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     try {
-      const newCount = user.quizzesTakenToday + 1;
-
-      const { error } = await supabase.from("users").upsert(
-        {
-          id: authUser.id,
-          quizzes_taken_today: newCount,
-        },
-        {
-          onConflict: "id",
-          ignoreDuplicates: false,
-        }
+      const freeTicketsRemaining = Math.max(
+        0,
+        dailyLimit - user.quizzesTakenToday
       );
+      const purchasedTickets = user.ticket_count || 0;
 
-      if (error) {
-        console.error("❌ UserContext: Error incrementing quiz count:", error);
-        throw error;
+      console.log("🎫 UserContext: Ticket consumption logic", {
+        freeTicketsRemaining,
+        purchasedTickets,
+        dailyLimit,
+        quizzesTakenToday: user.quizzesTakenToday,
+      });
+
+      if (freeTicketsRemaining > 0) {
+        // 無料チケットが残っている場合：無料チケットを消費
+        const newCount = user.quizzesTakenToday + 1;
+        console.log(
+          "🎫 UserContext: Consuming free ticket, new count:",
+          newCount
+        );
+
+        const { error } = await supabase.from("users").upsert(
+          {
+            id: authUser.id,
+            quizzes_taken_today: newCount,
+          },
+          {
+            onConflict: "id",
+            ignoreDuplicates: false,
+          }
+        );
+
+        if (error) {
+          console.error(
+            "❌ UserContext: Error incrementing quiz count:",
+            error
+          );
+          throw error;
+        }
+
+        setUser((prev) => ({
+          ...prev,
+          quizzesTakenToday: newCount,
+        }));
+      } else if (purchasedTickets > 0) {
+        // 無料チケットがない場合：購入チケットを消費
+        const newTicketCount = purchasedTickets - 1;
+        console.log(
+          "🎫 UserContext: Consuming purchased ticket, new count:",
+          newTicketCount
+        );
+
+        const { error } = await supabase.from("users").upsert(
+          {
+            id: authUser.id,
+            ticket_count: newTicketCount,
+          },
+          {
+            onConflict: "id",
+            ignoreDuplicates: false,
+          }
+        );
+
+        if (error) {
+          console.error(
+            "❌ UserContext: Error decrementing ticket count:",
+            error
+          );
+          throw error;
+        }
+
+        setUser((prev) => ({
+          ...prev,
+          ticket_count: newTicketCount,
+        }));
+      } else {
+        console.error("❌ UserContext: No tickets available for consumption");
+        throw new Error("No tickets available");
       }
-
-      setUser((prev) => ({
-        ...prev,
-        quizzesTakenToday: newCount,
-      }));
     } catch (err) {
       console.error("💥 UserContext: Error incrementing quiz count:", err);
     }
-  }, [isAuthenticated, authUser, user.quizzesTakenToday]);
+  }, [
+    isAuthenticated,
+    authUser,
+    user.quizzesTakenToday,
+    user.ticket_count,
+    dailyLimit,
+  ]);
 
   const saveQuizResult = useCallback(
     async (
@@ -385,6 +452,41 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     [isAuthenticated, authUser]
   );
 
+  const updateProfileImage = useCallback(
+    async (imageUrl: string) => {
+      console.log(
+        `🖼️ UserContext: updateProfileImage called with imageUrl: ${
+          imageUrl ? "provided" : "empty"
+        }`
+      );
+      if (!isAuthenticated || !authUser) {
+        console.log(
+          "⏸️ UserContext: updateProfileImage - user not authenticated"
+        );
+        return;
+      }
+
+      try {
+        const { error } = await supabase
+          .from("users")
+          .update({ profile_image_url: imageUrl || null })
+          .eq("id", authUser.id);
+
+        if (error) {
+          console.error("❌ UserContext: Error updating profile image:", error);
+          throw error;
+        }
+
+        setUser((prev) => ({ ...prev, profileImageUrl: imageUrl }));
+        console.log("✅ UserContext: Profile image updated successfully");
+      } catch (err) {
+        console.error("💥 UserContext: Error updating profile image:", err);
+        throw err;
+      }
+    },
+    [isAuthenticated, authUser]
+  );
+
   // 現在の状態をログ出力（デバッグ用）
   console.log("📊 UserContext: Current state:", {
     authIsLoading,
@@ -409,6 +511,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       incrementQuizCount,
       saveQuizResult,
       updateDisplayName,
+      updateProfileImage,
     }),
     [
       user,
@@ -421,6 +524,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       incrementQuizCount,
       saveQuizResult,
       updateDisplayName,
+      updateProfileImage,
     ]
   );
 

@@ -6,12 +6,12 @@
       - `id` (uuid, primary key): ユーザーID
       - `display_name` (text): 表示名
       - `is_premium` (boolean): プレミアム会員フラグ
-      - `quizzes_taken_today` (integer): 今日作成した診断数
+      - `quizzes_taken_today` (integer): 今日作成した相談数
       - `last_reset` (date): 最終リセット日
       - `created_at` (timestamp): 作成日時
 
     - `quizzes`
-      - `id` (uuid, primary key): 診断ID
+      - `id` (uuid, primary key): 相談ID
       - `title` (text): タイトル
       - `description` (text): 説明
       - `created_by` (uuid): 作成者ID
@@ -23,7 +23,7 @@
 
     - `quiz_questions`
       - `id` (uuid, primary key): 質問ID
-      - `quiz_id` (uuid): 診断ID
+      - `quiz_id` (uuid): 相談ID
       - `text` (text): 質問文
       - `order` (integer): 表示順
 
@@ -35,7 +35,7 @@
 
     - `quiz_results`
       - `id` (uuid, primary key): 結果ID
-      - `quiz_id` (uuid): 診断ID
+      - `quiz_id` (uuid): 相談ID
       - `title` (text): 結果タイトル
       - `description` (text): 結果説明
       - `image_url` (text): 画像URL
@@ -43,7 +43,7 @@
     - `user_quiz_results`
       - `id` (uuid, primary key): 実施結果ID
       - `user_id` (uuid): ユーザーID
-      - `quiz_id` (uuid): 診断ID
+      - `quiz_id` (uuid): 相談ID
       - `result_id` (uuid): 結果ID
       - `answers` (jsonb): 回答データ
       - `taken_at` (timestamp): 実施日時
@@ -51,7 +51,7 @@
   2. Security
     - すべてのテーブルでRLSを有効化
     - ユーザーは自分のデータのみ読み書き可能
-    - 診断は公開データとして全ユーザーが閲覧可能
+    - 相談は公開データとして全ユーザーが閲覧可能
 */
 
 -- Users table

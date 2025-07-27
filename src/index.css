@@ -3,33 +3,42 @@
 @tailwind utilities;
 
 :root {
-  --primary: #8B5CF6;
-  --secondary: #14B8A6;
-  --accent: #3B82F6;
+  --primary: #8b5cf6;
+  --secondary: #14b8a6;
+  --accent: #3b82f6;
 }
 
 @layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
     scroll-behavior: smooth;
   }
-  
   body {
     @apply bg-gray-50 text-gray-900 min-h-screen;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-semibold tracking-tight;
   }
-  
+
   h1 {
     @apply text-3xl md:text-4xl lg:text-5xl leading-tight;
   }
-  
+
   h2 {
     @apply text-2xl md:text-3xl lg:text-4xl leading-tight;
   }
-  
+
   h3 {
     @apply text-xl md:text-2xl lg:text-3xl leading-snug;
   }
@@ -39,47 +48,47 @@
   .btn {
     @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 transform focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed;
   }
-  
+
   .btn-primary {
     @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
   }
-  
+
   .btn-secondary {
     @apply btn bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-400;
   }
-  
+
   .btn-outline {
     @apply btn border border-gray-300 bg-white hover:bg-gray-50 focus:ring-gray-500;
   }
-  
+
   .card {
     @apply bg-white rounded-xl shadow-md overflow-hidden transition-all duration-200;
   }
-  
+
   .card-hover {
     @apply hover:shadow-lg hover:-translate-y-1;
   }
-  
+
   .input {
     @apply w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
   }
-  
+
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
-  
+
   .badge-primary {
     @apply badge bg-primary-100 text-primary-800;
   }
-  
+
   .badge-secondary {
     @apply badge bg-secondary-100 text-secondary-800;
   }
-  
+
   .container-custom {
     @apply container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
   }
-  
+
   .glass {
     @apply bg-white bg-opacity-70 backdrop-blur-md;
   }

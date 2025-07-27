@@ -27,7 +27,6 @@ const TakeQuizPage = () => {
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
-  const [hasReset, setHasReset] = useState(false);
 
   // 結果ページから遷移してきた場合の確認済みフラグをチェック
   const isConfirmedStart = location.state?.confirmedStart === true;
@@ -36,7 +35,6 @@ const TakeQuizPage = () => {
     console.log("useEffect発火:", {
       quizId,
       isConfirmedStart,
-      hasReset,
       currentQuiz: !!currentQuiz,
     });
 
@@ -50,17 +48,20 @@ const TakeQuizPage = () => {
       setIsLoadingQuiz(true);
 
       try {
-        // もう一度診断する時は一度だけcurrentQuizをリセットしてreturn
-        if (isConfirmedStart && !hasReset && currentQuiz !== null) {
-          console.log("リセット実行");
-          setCurrentQuiz(null);
-          setHasReset(true);
+        // もう一度相談する時は、既存のクイズデータがあれば再利用
+        if (isConfirmedStart && currentQuiz && currentQuiz.id === quizId) {
+          console.log("既存の相談データを再利用");
+          clearAnswers();
+          setCurrentQuestionIndex(0);
+          incrementQuizCount();
           setIsLoadingQuiz(false);
           return;
         }
+
+        // 新しいクイズまたは異なるクイズの場合は取得
         const loadedQuiz = await getQuizById(quizId);
         if (!loadedQuiz) {
-          setError("クイズが見つかりませんでした");
+          setError("相談が見つかりませんでした");
           return;
         }
         setCurrentQuiz(loadedQuiz);
@@ -68,14 +69,14 @@ const TakeQuizPage = () => {
         setCurrentQuestionIndex(0);
         incrementQuizCount();
       } catch {
-        setError("クイズの読み込み中にエラーが発生しました");
+        setError("相談の読み込み中にエラーが発生しました");
       } finally {
         setIsLoadingQuiz(false);
       }
     };
 
     loadQuiz();
-  }, [quizId, isConfirmedStart, navigate]);
+  }, [quizId, isConfirmedStart, navigate, currentQuiz?.id]);
 
   // ブラウザの戻るボタンと手動のナビゲーションを処理
   const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -84,7 +85,7 @@ const TakeQuizPage = () => {
   };
 
   useEffect(() => {
-    // 診断が開始されている場合のみbeforeunloadイベントを設定
+    // 相談が開始されている場合のみbeforeunloadイベントを設定
     if (currentQuiz && currentQuestionIndex >= 0) {
       window.addEventListener("beforeunload", handleBeforeUnload);
       return () => {
