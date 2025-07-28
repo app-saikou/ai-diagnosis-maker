@@ -283,7 +283,9 @@ const ProfilePage = () => {
       const userId = authUser?.id;
       if (!userId) throw new Error(t("userIdError"));
       const res = await fetch(
-        "http://localhost:4242/api/create-checkout-session",
+        process.env.NODE_ENV === "production"
+          ? "/.netlify/functions/create-checkout-session"
+          : "http://localhost:4242/api/create-checkout-session",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

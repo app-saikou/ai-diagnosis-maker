@@ -1,14 +1,18 @@
-import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/supabase';
+import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabaseの環境変数が設定されていません。');
+if (!supabaseUrl) {
+  throw new Error(
+    "VITE_SUPABASE_URL 環境変数が設定されていません。Netlifyの環境変数設定を確認してください。"
+  );
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+if (!supabaseAnonKey) {
+  throw new Error(
+    "VITE_SUPABASE_ANON_KEY 環境変数が設定されていません。Netlifyの環境変数設定を確認してください。"
+  );
+}
 
-export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
-export type Enums<T extends keyof Database['public']['Enums']> = Database['public']['Enums'][T];
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
