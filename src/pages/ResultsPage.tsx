@@ -115,6 +115,7 @@ const ResultsPage = () => {
 
         setResult(loadedResult);
 
+        // 動的に画像を生成
         const generatedImage = await imageService.generateAdvancedShareImage({
           appTitle: "AIだけどなにか相談ある？",
           quizTitle: loadedQuiz.title,
@@ -124,10 +125,49 @@ const ResultsPage = () => {
         });
         setGeneratedImageUrl(generatedImage);
 
+        // Base64画像をSupabase Storageにアップロードして公開URLを取得
+        const uploadImageToStorage = async (base64Data: string) => {
+          try {
+            // Base64データからBlobを作成
+            const base64Response = await fetch(base64Data);
+            const blob = await base64Response.blob();
+
+            // ファイル名を生成（ユニークにする）
+            const fileName = `ogp-images/${quizId}-${resultId}-${Date.now()}.png`;
+
+            // Supabase Storageにアップロード
+            const { error: uploadError } = await supabase.storage
+              .from("public")
+              .upload(fileName, blob, {
+                contentType: "image/png",
+                cacheControl: "3600",
+                upsert: false,
+              });
+
+            if (uploadError) {
+              console.error("Image upload error:", uploadError);
+              return null;
+            }
+
+            // 公開URLを取得
+            const {
+              data: { publicUrl },
+            } = supabase.storage.from("public").getPublicUrl(fileName);
+
+            return publicUrl;
+          } catch (error) {
+            console.error("Error uploading image:", error);
+            return null;
+          }
+        };
+
+        // 画像をアップロードして公開URLを取得
+        const publicImageUrl = await uploadImageToStorage(generatedImage);
+
         setShareMetadata({
           title: `${loadedResult.title} - ${loadedQuiz.title}`,
           description: loadedResult.description,
-          imageUrl: generatedImage,
+          imageUrl: publicImageUrl || generatedImage, // 公開URLが取得できた場合はそれを使用、失敗した場合はBase64
           url: `${window.location.origin}/d/${
             loadedQuiz.templateId || loadedQuiz.id
           }`,

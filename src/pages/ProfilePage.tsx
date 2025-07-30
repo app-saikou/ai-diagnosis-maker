@@ -47,7 +47,6 @@ const ProfilePage = () => {
   const {
     user,
     isPremium,
-    setIsPremium,
     quizzesRemaining,
     updateDisplayName,
     updateProfileImage,
@@ -59,12 +58,10 @@ const ProfilePage = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(user.displayName);
+  const [showCancelSubscription, setShowCancelSubscription] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [isDeleting2, setIsDeleting2] = useState(false);
-  const [isCancellingSubscription, setIsCancellingSubscription] =
-    useState(false);
-  const [showCancelSubscription, setShowCancelSubscription] = useState(false);
   const [fetchedQuizzes, setFetchedQuizzes] = useState<FetchedQuizzes>({});
   const [isLoading, setIsLoading] = useState(true);
   const [userStats, setUserStats] = useState<UserStats>({
@@ -239,43 +236,32 @@ const ProfilePage = () => {
   };
 
   const handleCancelSubscription = async () => {
-    if (!authUser?.id) return;
-
-    setIsCancellingSubscription(true);
+    if (!confirm(t("cancelSubscriptionConfirm"))) return;
 
     try {
-      const response = await fetch(
-        process.env.NODE_ENV === "production"
+      const userId = authUser?.id;
+      if (!userId) throw new Error(t("userIdError"));
+
+      const apiUrl =
+        import.meta.env.MODE === "production"
           ? "/.netlify/functions/cancel-subscription"
-          : "http://localhost:4242/api/cancel-subscription",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId: authUser.id }),
-        }
-      );
+          : "http://localhost:4242/api/cancel-subscription";
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || t("subscriptionCancelError"));
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        alert(t("subscriptionCancelled"));
+        window.location.reload();
+      } else {
+        throw new Error("Failed to cancel subscription");
       }
-
-      await response.json();
-
-      // UserContextのisPremiumを更新
-      setIsPremium(false);
-
-      alert(t("subscriptionCancelled"));
-      setShowCancelSubscription(false);
-    } catch (error) {
-      console.error("サブスク解約エラー:", error);
-      alert(
-        error instanceof Error ? error.message : t("subscriptionCancelError")
-      );
-    } finally {
-      setIsCancellingSubscription(false);
+    } catch (err) {
+      alert(t("cancelSubscriptionError"));
+      console.error(err);
     }
   };
 
@@ -284,16 +270,17 @@ const ProfilePage = () => {
     try {
       const userId = authUser?.id;
       if (!userId) throw new Error(t("userIdError"));
-      const res = await fetch(
-        process.env.NODE_ENV === "production"
+
+      const apiUrl =
+        import.meta.env.MODE === "production"
           ? "/.netlify/functions/create-checkout"
-          : "http://localhost:4242/api/create-checkout-session",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        }
-      );
+          : "http://localhost:4242/api/create-checkout-session";
+
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
       const { url } = await res.json();
       window.location.href = url;
     } catch (err) {
@@ -456,12 +443,10 @@ const ProfilePage = () => {
                   <button
                     onClick={() => setShowCancelSubscription(true)}
                     className="w-full btn-outline flex items-center justify-center text-orange-600 hover:bg-orange-50 hover:border-orange-200"
-                    disabled={isCancellingSubscription}
+                    disabled={isDeleting2}
                   >
                     <X className="h-4 w-4 mr-1.5" />
-                    {isCancellingSubscription
-                      ? t("cancelling")
-                      : t("cancelSubscription")}
+                    {isDeleting2 ? t("cancelling") : t("cancelSubscription")}
                   </button>
                 </div>
               )}
@@ -548,10 +533,10 @@ const ProfilePage = () => {
             <div className="flex flex-col gap-3">
               <button
                 onClick={handleCancelSubscription}
-                disabled={isCancellingSubscription}
+                disabled={isDeleting2}
                 className="btn-primary bg-orange-600 hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
-                {isCancellingSubscription ? (
+                {isDeleting2 ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     {t("cancelling")}
@@ -563,7 +548,7 @@ const ProfilePage = () => {
               <button
                 onClick={() => setShowCancelSubscription(false)}
                 className="btn-outline"
-                disabled={isCancellingSubscription}
+                disabled={isDeleting2}
               >
                 {t("cancel")}
               </button>

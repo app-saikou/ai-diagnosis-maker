@@ -103,16 +103,17 @@ const Header = () => {
     try {
       const userId = authUser?.id;
       if (!userId) throw new Error("ユーザーIDが取得できません");
-      const response = await fetch(
-        process.env.NODE_ENV === "production"
+
+      const apiUrl =
+        import.meta.env.MODE === "production"
           ? "/.netlify/functions/create-checkout"
-          : "http://localhost:4242/api/create-checkout-session",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        }
-      );
+          : "http://localhost:4242/api/create-checkout-session";
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
       const { url } = await response.json();
       window.location.href = url;
     } catch (err) {

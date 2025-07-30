@@ -48,16 +48,25 @@ const PricingPage: React.FC = () => {
     try {
       const userId = user?.id;
       if (!userId) throw new Error(t("userIdError"));
-      const response = await fetch(
-        process.env.NODE_ENV === "production"
+
+      // デバッグ: 環境変数の値を確認
+      console.log("🔍 Environment check:");
+      console.log("NODE_ENV:", process.env.NODE_ENV);
+      console.log("VITE_NODE_ENV:", import.meta.env.NODE_ENV);
+      console.log("VITE_MODE:", import.meta.env.MODE);
+
+      const apiUrl =
+        import.meta.env.MODE === "production"
           ? "/.netlify/functions/create-checkout"
-          : "http://localhost:4242/api/create-checkout-session",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        }
-      );
+          : "http://localhost:4242/api/create-checkout-session";
+
+      console.log("🔗 API URL:", apiUrl);
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
       const { url } = await response.json();
       window.location.href = url;
     } catch (err) {
@@ -71,16 +80,17 @@ const PricingPage: React.FC = () => {
     try {
       const userId = user?.id;
       if (!userId) throw new Error(t("userIdError"));
-      const response = await fetch(
-        process.env.NODE_ENV === "production"
+
+      const apiUrl =
+        import.meta.env.MODE === "production"
           ? "/.netlify/functions/create-ticket-checkout"
-          : "http://localhost:4242/api/create-ticket-checkout-session",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, price_id }),
-        }
-      );
+          : "http://localhost:4242/api/create-ticket-checkout-session";
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, price_id }),
+      });
       const { url } = await response.json();
       window.location.href = url;
     } catch (err) {
