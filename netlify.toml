@@ -4,6 +4,8 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  SECRETS_SCAN_ENABLED = "false"
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_OPENAI_API_KEY,PORT,NODE_ENV,SUPABASE_URL"
 
 # セキュリティスキャンを無効化
 [build.processing]
@@ -26,11 +28,6 @@
 # セキュリティスキャン設定
 [build.processing.secrets]
   enabled = false
-
-# 環境変数の除外設定
-[build.environment]
-  SECRETS_SCAN_ENABLED = "false"
-  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_OPENAI_API_KEY,PORT,NODE_ENV,SUPABASE_URL"
 
 [[redirects]]
   from = "/*"
