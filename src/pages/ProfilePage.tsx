@@ -245,7 +245,9 @@ const ProfilePage = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:4242/api/cancel-subscription",
+        process.env.NODE_ENV === "production"
+          ? "/.netlify/functions/cancel-subscription"
+          : "http://localhost:4242/api/cancel-subscription",
         {
           method: "POST",
           headers: {
