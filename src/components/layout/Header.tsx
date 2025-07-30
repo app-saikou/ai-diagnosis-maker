@@ -105,7 +105,7 @@ const Header = () => {
       if (!userId) throw new Error("ユーザーIDが取得できません");
       const response = await fetch(
         process.env.NODE_ENV === "production"
-          ? "/.netlify/functions/create-checkout-session"
+          ? "/.netlify/functions/create-checkout"
           : "http://localhost:4242/api/create-checkout-session",
         {
           method: "POST",

@@ -50,7 +50,7 @@ const PricingPage: React.FC = () => {
       if (!userId) throw new Error(t("userIdError"));
       const response = await fetch(
         process.env.NODE_ENV === "production"
-          ? "/.netlify/functions/create-checkout-session"
+          ? "/.netlify/functions/create-checkout"
           : "http://localhost:4242/api/create-checkout-session",
         {
           method: "POST",

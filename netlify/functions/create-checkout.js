@@ -34,7 +34,7 @@ exports.handler = async (event, context) => {
     // 環境に応じてURLを設定
     const baseUrl =
       process.env.NODE_ENV === "production"
-        ? "https://your-app.netlify.app"
+        ? "https://ai-consultation.netlify.app"
         : "http://localhost:5173";
 
     const session = await stripe.checkout.sessions.create({

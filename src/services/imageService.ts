@@ -29,7 +29,7 @@ export const imageService = {
     quizTitle,
     resultTitle,
     resultDescription,
-    url = "https://your-app.com",
+    url = "https://ai-consultation.netlify.app",
   }: ShareImageParams): Promise<string> => {
     const container = document.createElement("div");
     container.style.cssText = `
