@@ -54,24 +54,39 @@ const PricingPage: React.FC = () => {
       console.log("NODE_ENV:", process.env.NODE_ENV);
       console.log("VITE_NODE_ENV:", import.meta.env.NODE_ENV);
       console.log("VITE_MODE:", import.meta.env.MODE);
+      console.log("window.location.hostname:", window.location.hostname);
+      console.log("window.location.origin:", window.location.origin);
+      console.log("window.location.href:", window.location.href);
 
-      const apiUrl =
-        import.meta.env.MODE === "production"
-          ? "/.netlify/functions/create-checkout"
-          : "http://localhost:4242/api/create-checkout-session";
+      // より確実な環境判定
+      const isProduction =
+        import.meta.env.MODE === "production" ||
+        import.meta.env.NODE_ENV === "production" ||
+        window.location.hostname === "ai-consultation.netlify.app";
+
+      const apiUrl = isProduction
+        ? "/.netlify/functions/create-checkout"
+        : "http://localhost:4242/api/create-checkout-session";
 
       console.log("🔗 API URL:", apiUrl);
+      console.log("🔗 Full URL:", window.location.origin + apiUrl);
+      console.log("🔗 isProduction:", isProduction);
 
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const { url } = await response.json();
       window.location.href = url;
     } catch (err) {
+      console.error("決済エラー詳細:", err);
       alert(t("paymentError"));
-      console.error(err);
     }
   };
 
@@ -81,21 +96,31 @@ const PricingPage: React.FC = () => {
       const userId = user?.id;
       if (!userId) throw new Error(t("userIdError"));
 
-      const apiUrl =
-        import.meta.env.MODE === "production"
-          ? "/.netlify/functions/create-ticket-checkout"
-          : "http://localhost:4242/api/create-ticket-checkout-session";
+      // より確実な環境判定
+      const isProduction =
+        import.meta.env.MODE === "production" ||
+        import.meta.env.NODE_ENV === "production" ||
+        window.location.hostname === "ai-consultation.netlify.app";
+
+      const apiUrl = isProduction
+        ? "/.netlify/functions/create-ticket-checkout"
+        : "http://localhost:4242/api/create-ticket-checkout-session";
 
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, price_id }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const { url } = await response.json();
       window.location.href = url;
     } catch (err) {
+      console.error("チケット決済エラー詳細:", err);
       alert(t("paymentError"));
-      console.error(err);
     }
   };
 
