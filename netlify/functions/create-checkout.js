@@ -29,7 +29,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { userId } = JSON.parse(event.body);
+    const { userId, priceId } = JSON.parse(event.body);
 
     // 環境に応じてURLを設定
     const baseUrl =
@@ -40,7 +40,7 @@ exports.handler = async (event, context) => {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "subscription",
-      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${baseUrl}/success`,
       cancel_url: `${baseUrl}/cancel`,
       client_reference_id: userId,

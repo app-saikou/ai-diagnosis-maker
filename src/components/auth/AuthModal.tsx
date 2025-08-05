@@ -23,9 +23,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ゲストログイン時はCAPTCHA必須
+    // ゲストログイン時はCAPTCHA必須（本番環境のみ）
     if (!isSignUp && !email && !password) {
-      if (!captchaToken) {
+      if (import.meta.env.MODE === "production" && !captchaToken) {
         alert("CAPTCHAを完了してください");
         return;
       }
@@ -46,7 +46,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleGuestLogin = async () => {
-    if (!captchaToken) {
+    if (import.meta.env.MODE === "production" && !captchaToken) {
       alert("CAPTCHAを完了してください");
       return;
     }
@@ -149,17 +149,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* CAPTCHA for guest login */}
-          {!isSignUp && !email && !password && (
-            <div className="flex justify-center">
-              <ReCAPTCHA
-                sitekey={
-                  import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
-                  "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                }
-                onChange={setCaptchaToken}
-              />
-            </div>
-          )}
+          {!isSignUp &&
+            !email &&
+            !password &&
+            import.meta.env.MODE === "production" && (
+              <div className="flex justify-center">
+                <ReCAPTCHA
+                  sitekey={
+                    import.meta.env.VITE_RECAPTCHA_SITE_KEY ||
+                    "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                  }
+                  onChange={setCaptchaToken}
+                />
+              </div>
+            )}
 
           <button
             type="submit"
@@ -185,7 +188,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             </div>
             <button
               onClick={handleGuestLogin}
-              disabled={isLoading || !captchaToken}
+              disabled={
+                isLoading ||
+                (import.meta.env.MODE === "production" && !captchaToken)
+              }
               className="w-full mt-4 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? t("loading") : t("continueAsGuest")}

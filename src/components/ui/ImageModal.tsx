@@ -13,6 +13,65 @@ const ImageModal: React.FC<ImageModalProps> = ({
 }) => {
   if (!isOpen || !imageUrl) return null;
 
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  };
+
+  const handleSaveImage = async () => {
+    try {
+      if (isMobile()) {
+        // モバイル: ライブラリに保存
+        await saveToMobileGallery();
+      } else {
+        // デスクトップ: ファイルダウンロード
+        handleDownload();
+      }
+    } catch (error) {
+      console.error("画像保存エラー:", error);
+      alert("画像の保存に失敗しました");
+    }
+  };
+
+  const saveToMobileGallery = async () => {
+    try {
+      // Base64データURLからBlobを作成
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+
+      // Web Share APIを使用（モバイルブラウザ対応）
+      if (navigator.share) {
+        const file = new File([blob], "share-image.png", { type: "image/png" });
+        await navigator.share({
+          files: [file],
+          title: "相談結果画像",
+          text: "AI相談の結果画像をシェアします",
+        });
+        return;
+      }
+
+      // フォールバック: 新しいタブで開いて手動保存
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "share-image.png";
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      alert(
+        "画像が新しいタブで開かれました。長押ししてライブラリに保存してください。"
+      );
+    } catch (error) {
+      console.error("モバイル保存エラー:", error);
+      // フォールバック: 通常のダウンロード
+      handleDownload();
+    }
+  };
+
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = imageUrl;
@@ -39,11 +98,11 @@ const ImageModal: React.FC<ImageModalProps> = ({
             className="max-w-full max-h-[60vh] rounded-lg shadow-lg border border-gray-200"
           />
           <button
-            onClick={handleDownload}
+            onClick={handleSaveImage}
             className="mt-6 flex items-center px-5 py-2 bg-primary-600 text-white rounded-lg shadow hover:bg-primary-700 transition-colors"
           >
             <Download className="h-5 w-5 mr-2" />
-            画像を保存
+            {isMobile() ? "ライブラリに保存" : "画像を保存"}
           </button>
         </div>
       </div>

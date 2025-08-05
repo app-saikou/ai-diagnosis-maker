@@ -658,62 +658,56 @@ const ProfilePage = () => {
                     )
                   }
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-1">
-                        <h3 className="text-sm font-medium text-gray-900">
-                          {quiz.title}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-sm text-primary-600">
-                            {t("result")}: {quizResult.title}
-                          </p>
-                        </div>
-                        {quizResult.recommendedAction && (
-                          <div
-                            className="mt-2 p-2 bg-primary-50 border border-primary-200 rounded-lg cursor-help"
-                            title={quizResult.recommendedAction}
-                          >
-                            <div className="flex items-start gap-2">
-                              <span className="text-primary-600 text-xs flex-shrink-0">
-                                💡
-                              </span>
-                              <p className="text-xs text-primary-700 line-clamp-2">
-                                {quizResult.recommendedAction.length > 60
-                                  ? `${quizResult.recommendedAction.substring(
-                                      0,
-                                      60
-                                    )}...`
-                                  : quizResult.recommendedAction}
-                              </p>
-                            </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-gray-900">
+                        {quiz.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-sm text-primary-600">
+                          {t("result")}: {quizResult.title}
+                        </p>
+                      </div>
+
+                      {quizResult.recommendedAction && (
+                        <div
+                          className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg cursor-help w-fit"
+                          title={quizResult.recommendedAction}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <span className="text-primary-600 text-sm mt-0.5 flex-shrink-0">
+                              💡
+                            </span>
+                            <p className="text-xs text-primary-700 leading-relaxed">
+                              {quizResult.recommendedAction.length > 40
+                                ? `${quizResult.recommendedAction.substring(
+                                    0,
+                                    40
+                                  )}...`
+                                : quizResult.recommendedAction}
+                            </p>
                           </div>
-                        )}
-                        {/* デスクトップ用作成者表示 */}
-                        <div className="hidden md:block mt-1">
-                          <span className="text-xs text-gray-500">
+                        </div>
+                      )}
+
+                      {/* 作成者情報と日時 */}
+                      <div className="mt-2 text-xs text-gray-500">
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+                          <span>
                             {t("creator")}:{" "}
                             {isCreator ? user.displayName : t("guestUser")}
                           </span>
-                        </div>
-                        {/* モバイル用作成者と日時表示 */}
-                        <div className="md:hidden mt-2 space-y-1">
-                          <div className="text-xs text-gray-500">
-                            {t("creator")}:{" "}
-                            {isCreator ? user.displayName : t("guestUser")}
-                          </div>
-                          <div className="text-xs text-gray-500">
+                          <span className="hidden md:inline">
                             {formatDate(result.takenAt)}
-                          </div>
+                          </span>
+                          <span className="md:hidden mt-1">
+                            {formatDate(result.takenAt)}
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* デスクトップ用日時表示 */}
-                    <div className="hidden md:flex items-center">
-                      <span className="text-sm text-gray-500 mr-3">
-                        {formatDate(result.takenAt)}
-                      </span>
+                    <div className="flex-shrink-0 self-center">
                       <ChevronRight className="h-5 w-5 text-gray-400" />
                     </div>
                   </div>

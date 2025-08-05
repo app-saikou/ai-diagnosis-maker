@@ -26,19 +26,19 @@ const PricingPage: React.FC = () => {
     {
       name: t("consultationTicket1"),
       price: 50,
-      price_id: "price_1Rl9H6BDZKTuon087WLZVdSZ",
+      price_id: import.meta.env.VITE_STRIPE_TICKET_PRICE_ID_1,
       count: 1,
     },
     {
       name: t("consultationTicket3"),
       price: 120,
-      price_id: "price_1Rl9GJBDZKTuon08ozCutQYR",
+      price_id: import.meta.env.VITE_STRIPE_TICKET_PRICE_ID_3,
       count: 3,
     },
     {
       name: t("consultationTicket10"),
       price: 300,
-      price_id: "price_1Rkv9KBDZKTuon084VUeTgzf",
+      price_id: import.meta.env.VITE_STRIPE_TICKET_PRICE_ID_10,
       count: 10,
     },
   ];
@@ -75,7 +75,10 @@ const PricingPage: React.FC = () => {
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({
+          userId,
+          priceId: import.meta.env.VITE_STRIPE_PRICE_ID,
+        }),
       });
 
       if (!response.ok) {

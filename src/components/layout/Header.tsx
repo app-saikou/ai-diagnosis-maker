@@ -473,6 +473,13 @@ const Header = () => {
                   <User className="h-4 w-4 mr-2" />
                   {t("profile")}
                 </Link>
+                <button
+                  onClick={handleSignOutClick}
+                  className="flex items-center p-2 rounded-md text-gray-700 hover:bg-gray-50 w-full text-left"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {t("signOut")}
+                </button>
               </>
             )}
           </div>

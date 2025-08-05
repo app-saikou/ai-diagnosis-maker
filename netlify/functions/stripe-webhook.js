@@ -87,9 +87,9 @@ exports.handler = async (event, context) => {
     // チケット決済（mode: payment）
     if (session.mode === "payment") {
       const priceToCount = {
-        price_1Rl9H6BDZKTuon087WLZVdSZ: 1, // 1枚
-        price_1Rl9GJBDZKTuon08ozCutQYR: 3, // 3枚
-        price_1Rkv9KBDZKTuon084VUeTgzf: 10, // 10枚
+        [process.env.STRIPE_TICKET_PRICE_ID_1]: 1, // 1枚
+        [process.env.STRIPE_TICKET_PRICE_ID_3]: 3, // 3枚
+        [process.env.STRIPE_TICKET_PRICE_ID_10]: 10, // 10枚
       };
 
       const lineItems = await stripe.checkout.sessions.listLineItems(
