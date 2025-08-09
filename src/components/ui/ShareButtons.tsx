@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { Link as LinkIcon } from "lucide-react";
-import xLogo from "../../assets/logo-white.png";
+import xLogo from "../../assets/logo-white.webp";
 import { ShareMetadata } from "../../types";
 
 const ShareButtons: FC<ShareMetadata> = ({ url, title }) => {

@@ -4,7 +4,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { Crown, Ticket } from "lucide-react";
 
 const PricingPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
   const { t } = useLanguage();
 
   const PLANS = [
@@ -46,31 +46,18 @@ const PricingPage: React.FC = () => {
   // サブスク決済
   const handleSubscribe = async () => {
     try {
-      const userId = user?.id;
+      const userId = authUser?.id;
       if (!userId) throw new Error(t("userIdError"));
 
-      // デバッグ: 環境変数の値を確認
-      console.log("🔍 Environment check:");
-      console.log("NODE_ENV:", process.env.NODE_ENV);
-      console.log("VITE_NODE_ENV:", import.meta.env.NODE_ENV);
-      console.log("VITE_MODE:", import.meta.env.MODE);
-      console.log("window.location.hostname:", window.location.hostname);
-      console.log("window.location.origin:", window.location.origin);
-      console.log("window.location.href:", window.location.href);
-
-      // より確実な環境判定
-      const isProduction =
-        import.meta.env.MODE === "production" ||
-        import.meta.env.NODE_ENV === "production" ||
-        window.location.hostname === "ai-consultation.netlify.app";
-
-      const apiUrl = isProduction
-        ? "/.netlify/functions/create-checkout"
-        : "http://localhost:4242/api/create-checkout-session";
+      // 開発環境ではNetlify Devを使用、本番ではNetlify Functionsを使用
+      const isLocalDev =
+        window.location.hostname === "localhost" &&
+        window.location.port === "5173";
+      const apiUrl = isLocalDev
+        ? "http://localhost:8888/.netlify/functions/create-checkout"
+        : "/.netlify/functions/create-checkout";
 
       console.log("🔗 API URL:", apiUrl);
-      console.log("🔗 Full URL:", window.location.origin + apiUrl);
-      console.log("🔗 isProduction:", isProduction);
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -96,18 +83,18 @@ const PricingPage: React.FC = () => {
   // チケット決済
   const handleBuyTicket = async (price_id: string) => {
     try {
-      const userId = user?.id;
+      const userId = authUser?.id;
       if (!userId) throw new Error(t("userIdError"));
 
-      // より確実な環境判定
-      const isProduction =
-        import.meta.env.MODE === "production" ||
-        import.meta.env.NODE_ENV === "production" ||
-        window.location.hostname === "ai-consultation.netlify.app";
+      // 開発環境ではNetlify Devを使用、本番ではNetlify Functionsを使用
+      const isLocalDev =
+        window.location.hostname === "localhost" &&
+        window.location.port === "5173";
+      const apiUrl = isLocalDev
+        ? "http://localhost:8888/.netlify/functions/create-ticket-checkout"
+        : "/.netlify/functions/create-ticket-checkout";
 
-      const apiUrl = isProduction
-        ? "/.netlify/functions/create-ticket-checkout"
-        : "http://localhost:4242/api/create-ticket-checkout-session";
+      console.log("🔗 API URL:", apiUrl);
 
       const response = await fetch(apiUrl, {
         method: "POST",

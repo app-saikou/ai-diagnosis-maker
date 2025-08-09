@@ -12,6 +12,8 @@ import AuthPrompt from "../components/ui/AuthPrompt";
 import AuthModal from "../components/auth/AuthModal";
 import QuizConfirmModal from "../components/ui/QuizConfirmModal";
 import { QuizMode } from "../types";
+import StructuredData from "../components/ui/StructuredData";
+import CanonicalUrl from "../components/ui/CanonicalUrl";
 
 const CreateQuizPage = () => {
   const navigate = useNavigate();
@@ -142,117 +144,132 @@ const CreateQuizPage = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold mb-4">{t("createConsultation")}</h1>
-        <p className="text-gray-600">{t("createConsultationDescription")}</p>
-      </div>
+    <>
+      <StructuredData
+        type="article"
+        data={{
+          title: t("createConsultation"),
+          description: t("createConsultationDescription"),
+          url: "https://ai-consultation.netlify.app/create",
+        }}
+      />
+      <CanonicalUrl url="https://ai-consultation.netlify.app/create" />
+      <div className="max-w-2xl mx-auto space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4">{t("createConsultation")}</h1>
+          <p className="text-gray-600">{t("createConsultationDescription")}</p>
+        </div>
 
-      <div className="space-y-6">
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-xl font-semibold">{t("consultationTitle")}</h2>
-            <span
-              className={`text-sm ${
-                titleLength > maxTitleLength * 0.8
-                  ? "text-orange-500"
-                  : "text-gray-500"
-              }`}
-            >
-              {titleLength}/{maxTitleLength}
-            </span>
+        <div className="space-y-6">
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-semibold">
+                {t("consultationTitle")}
+              </h2>
+              <span
+                className={`text-sm ${
+                  titleLength > maxTitleLength * 0.8
+                    ? "text-orange-500"
+                    : "text-gray-500"
+                }`}
+              >
+                {titleLength}/{maxTitleLength}
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                id="quiz-title"
+                value={title}
+                onChange={handleTitleChange}
+                className={`input pr-10 ${
+                  isTitleEmpty || hasNgWord
+                    ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                    : ""
+                }`}
+                placeholder={t("consultationTitlePlaceholder")}
+                maxLength={maxTitleLength}
+              />
+              <button
+                onClick={handleShuffle}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary-600"
+                title={t("shuffle")}
+              >
+                <Shuffle className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mt-1 flex justify-between items-start">
+              <p className="text-sm text-gray-500">
+                {t("consultationTitleDescription")}
+              </p>
+            </div>
+            {isTitleEmpty && (
+              <p className="mt-1 text-sm text-red-600">{t("titleRequired")}</p>
+            )}
+            {ngWordError && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <Shield className="h-4 w-4 mr-1" />
+                {ngWordError}
+              </p>
+            )}
           </div>
-          <div className="relative">
-            <input
-              type="text"
-              id="quiz-title"
-              value={title}
-              onChange={handleTitleChange}
-              className={`input pr-10 ${
-                isTitleEmpty || hasNgWord
-                  ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                  : ""
-              }`}
-              placeholder={t("consultationTitlePlaceholder")}
-              maxLength={maxTitleLength}
+
+          <div>
+            <h2 className="text-xl font-semibold mb-4">
+              {t("consultationMode")}
+            </h2>
+            <QuizModeSelector
+              selectedMode={selectedMode}
+              onSelectMode={setSelectedMode}
             />
+          </div>
+
+          {(error || localError) && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+              <span className="block sm:inline">{error || localError}</span>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
             <button
-              onClick={handleShuffle}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary-600"
-              title={t("shuffle")}
+              onClick={handleCreateQuiz}
+              disabled={
+                isGenerating || !canTakeQuiz || isTitleEmpty || hasNgWord
+              }
+              className={`btn-primary flex-1 flex items-center justify-center ${
+                isTitleEmpty || hasNgWord ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
-              <Shuffle className="h-5 w-5" />
+              {isGenerating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {t("generating")}
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-5 w-5 mr-2" />
+                  {t("generateConsultation")}
+                </>
+              )}
             </button>
           </div>
-          <div className="mt-1 flex justify-between items-start">
-            <p className="text-sm text-gray-500">
-              {t("consultationTitleDescription")}
-            </p>
-          </div>
-          {isTitleEmpty && (
-            <p className="mt-1 text-sm text-red-600">{t("titleRequired")}</p>
-          )}
-          {ngWordError && (
-            <p className="mt-1 text-sm text-red-600 flex items-center">
-              <Shield className="h-4 w-4 mr-1" />
-              {ngWordError}
-            </p>
-          )}
         </div>
 
-        <div>
-          <h2 className="text-xl font-semibold mb-4">
-            {t("consultationMode")}
-          </h2>
-          <QuizModeSelector
-            selectedMode={selectedMode}
-            onSelectMode={setSelectedMode}
-          />
-        </div>
+        <QuizConfirmModal
+          isOpen={showConfirmModal}
+          onClose={() => {
+            setShowConfirmModal(false);
+            setPendingQuiz(null);
+          }}
+          onConfirm={handleConfirmCreate}
+        />
 
-        {(error || localError) && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-            <span className="block sm:inline">{error || localError}</span>
-          </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
-          <button
-            onClick={handleCreateQuiz}
-            disabled={isGenerating || !canTakeQuiz || isTitleEmpty || hasNgWord}
-            className={`btn-primary flex-1 flex items-center justify-center ${
-              isTitleEmpty || hasNgWord ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            {isGenerating ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                {t("generating")}
-              </>
-            ) : (
-              <>
-                <Wand2 className="h-5 w-5 mr-2" />
-                {t("generateConsultation")}
-              </>
-            )}
-          </button>
-        </div>
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+        />
       </div>
-
-      <QuizConfirmModal
-        isOpen={showConfirmModal}
-        onClose={() => {
-          setShowConfirmModal(false);
-          setPendingQuiz(null);
-        }}
-        onConfirm={handleConfirmCreate}
-      />
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
-    </div>
+    </>
   );
 };
 
