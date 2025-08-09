@@ -35,11 +35,10 @@ function App() {
           <Route path="legal" element={<LegalNoticePage />} />
           <Route path="terms" element={<TermsPage />} />
           <Route path="cookie" element={<CookiePolicyPage />} />
+          <Route path="success" element={<SuccessPage />} />
+          <Route path="cancel" element={<CancelPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
-        {/* Stripe決済後のページはLayoutを使わない */}
-        <Route path="/success" element={<SuccessPage />} />
-        <Route path="/cancel" element={<CancelPage />} />
       </Routes>
     </>
   );
