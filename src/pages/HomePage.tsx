@@ -14,6 +14,7 @@ import QuizCard from "../components/ui/QuizCard";
 import { Quiz } from "../types";
 import StructuredData from "../components/ui/StructuredData";
 import CanonicalUrl from "../components/ui/CanonicalUrl";
+import { Helmet } from "react-helmet-async";
 
 const HomePage = () => {
   const { quizzes, refreshQuizzes } = useQuiz();
@@ -70,6 +71,28 @@ const HomePage = () => {
 
   return (
     <>
+      <Helmet>
+        <title>
+          AIだけどなにか相談ある？ - AI相談メーカー | 無料でAIに相談
+        </title>
+        <meta
+          name="description"
+          content="AIに簡単に相談できるプラットフォーム。あなたの相談に診断テスト形式で回答します。無料で利用可能、プレミアム機能も充実。"
+        />
+        <meta
+          name="keywords"
+          content="AI相談, AI診断, 無料相談, AIアドバイス, 診断クイズ, AI相談メーカー, オンライン相談"
+        />
+        <meta name="author" content="AIだけどなにか相談ある？" />
+        <meta name="robots" content="index, follow" />
+        <meta name="language" content="ja" />
+
+        {/* ソーシャルメディア用のメタタグ */}
+        <meta property="og:locale" content="ja_JP" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="AIだけどなにか相談ある？" />
+      </Helmet>
+
       <StructuredData
         type="website"
         data={{
@@ -79,6 +102,7 @@ const HomePage = () => {
         }}
       />
       <CanonicalUrl url="https://ai-consultation.netlify.app" />
+
       <div className="space-y-16">
         {/* Hero Section */}
         <section className="relative min-h-[85vh] flex items-center">

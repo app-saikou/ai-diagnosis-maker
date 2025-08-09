@@ -235,6 +235,7 @@ const ProfilePage = () => {
     }
   };
 
+  // サブスクリプション解約
   const handleCancelSubscription = async () => {
     if (!confirm(t("cancelSubscriptionConfirm"))) return;
 
@@ -242,15 +243,8 @@ const ProfilePage = () => {
       const userId = authUser?.id;
       if (!userId) throw new Error(t("userIdError"));
 
-      // より確実な環境判定
-      const isProduction =
-        import.meta.env.MODE === "production" ||
-        import.meta.env.NODE_ENV === "production" ||
-        window.location.hostname === "ai-consultation.netlify.app";
-
-      const apiUrl = isProduction
-        ? "/.netlify/functions/cancel-subscription"
-        : "http://localhost:4242/api/cancel-subscription";
+      // シンプルに相対パスのみ使用
+      const apiUrl = "/.netlify/functions/cancel-subscription";
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -276,15 +270,8 @@ const ProfilePage = () => {
       const userId = authUser?.id;
       if (!userId) throw new Error(t("userIdError"));
 
-      // より確実な環境判定
-      const isProduction =
-        import.meta.env.MODE === "production" ||
-        import.meta.env.NODE_ENV === "production" ||
-        window.location.hostname === "ai-consultation.netlify.app";
-
-      const apiUrl = isProduction
-        ? "/.netlify/functions/create-checkout"
-        : "http://localhost:4242/api/create-checkout-session";
+      // シンプルに相対パスのみ使用
+      const apiUrl = "/.netlify/functions/create-checkout";
 
       const res = await fetch(apiUrl, {
         method: "POST",

@@ -29,7 +29,7 @@ const Footer = () => {
           </div>
 
           {/* Quick Links */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-3">
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">
               {t("quickLinks")}
             </h3>
@@ -78,7 +78,7 @@ const Footer = () => {
           </div>
 
           {/* Legal */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-3">
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">
               {t("legalInfo")}
             </h3>
@@ -142,6 +142,9 @@ const Footer = () => {
             <div className="text-sm text-gray-600 mb-4 md:mb-0 text-center w-full">
               <p className="mb-2">
                 © {currentYear} {t("appName")}. All rights reserved.
+              </p>
+              <p className="text-xs text-gray-500">
+                このサイトはGoogle AdSenseの審査を受けるために最適化されています
               </p>
             </div>
           </div>

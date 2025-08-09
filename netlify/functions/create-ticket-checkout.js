@@ -31,11 +31,8 @@ exports.handler = async (event, context) => {
   try {
     const { userId, price_id } = JSON.parse(event.body);
 
-    // 環境に応じてURLを設定
-    const baseUrl =
-      process.env.NODE_ENV === "production"
-        ? "https://ai-consultation.netlify.app"
-        : "http://localhost:5173";
+    // 環境変数に依存せず、確実に本番URLを指定
+    const baseUrl = "https://ai-consultation.netlify.app";
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],

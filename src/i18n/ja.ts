@@ -210,6 +210,8 @@ export const ja = {
   subscriptionCancelled:
     "サブスクリプションが解約されました。現在の期間終了までプレミアム機能をご利用いただけます。",
   subscriptionCancelError: "サブスク解約に失敗しました",
+  cancelSubscriptionConfirm: "サブスクリプションを解約しますか？",
+  cancelSubscriptionError: "サブスクリプションの解約に失敗しました",
   accountDeleteError: "アカウント削除に失敗しました",
   profileImageUpdateError: "プロフィール画像の更新に失敗しました",
 

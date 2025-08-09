@@ -49,13 +49,8 @@ const PricingPage: React.FC = () => {
       const userId = authUser?.id;
       if (!userId) throw new Error(t("userIdError"));
 
-      // 開発環境ではNetlify Devを使用、本番ではNetlify Functionsを使用
-      const isLocalDev =
-        window.location.hostname === "localhost" &&
-        window.location.port === "5173";
-      const apiUrl = isLocalDev
-        ? "http://localhost:8888/.netlify/functions/create-checkout"
-        : "/.netlify/functions/create-checkout";
+      // シンプルに相対パスのみ使用
+      const apiUrl = "/.netlify/functions/create-checkout";
 
       console.log("🔗 API URL:", apiUrl);
 
@@ -86,13 +81,8 @@ const PricingPage: React.FC = () => {
       const userId = authUser?.id;
       if (!userId) throw new Error(t("userIdError"));
 
-      // 開発環境ではNetlify Devを使用、本番ではNetlify Functionsを使用
-      const isLocalDev =
-        window.location.hostname === "localhost" &&
-        window.location.port === "5173";
-      const apiUrl = isLocalDev
-        ? "http://localhost:8888/.netlify/functions/create-ticket-checkout"
-        : "/.netlify/functions/create-ticket-checkout";
+      // シンプルに相対パスのみ使用
+      const apiUrl = "/.netlify/functions/create-ticket-checkout";
 
       console.log("🔗 API URL:", apiUrl);
 

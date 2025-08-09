@@ -1,42 +1,50 @@
-import { useEffect } from "react";
+import React from "react";
 
-declare global {
-  interface Window {
-    adsbygoogle?: unknown[];
-  }
-}
-
+// Google AdSense審査通過まで一時的に無効化
 const GoogleTestAdBanner = () => {
+  // AdSense関連のコードを一時的にコメントアウト
+  /*
   useEffect(() => {
-    // Google AdSenseのスクリプトがなければ追加
     if (!window.adsbygoogle && !document.getElementById("adsbygoogle-js")) {
       const script = document.createElement("script");
       script.id = "adsbygoogle-js";
       script.src =
         "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
       script.async = true;
-      document.body.appendChild(script);
+      script.crossOrigin = "anonymous";
+      document.head.appendChild(script);
     }
-    setTimeout(() => {
-      try {
-        (window.adsbygoogle = window.adsbygoogle || []) as unknown[];
-        (window.adsbygoogle as unknown[]).push({});
-      } catch {
-        // ignore
-      }
-    }, 500);
+
+    if (window.adsbygoogle) {
+      (window.adsbygoogle = window.adsbygoogle || []) as unknown[];
+      (window.adsbygoogle as unknown[]).push({});
+    }
   }, []);
 
   return (
-    <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
-      <ins
-        className="adsbygoogle"
-        style={{ display: "block", width: "100%", minHeight: 60 }}
-        data-ad-client="ca-pub-3940256099942544" // Google公式テストID
-        data-ad-slot="1234567890" // 任意の数字
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      ></ins>
+    <div className="w-full bg-gray-100 py-4 px-4 text-center">
+      <div className="max-w-4xl mx-auto">
+        <ins
+          className="adsbygoogle"
+          style={{ display: "block" }}
+          data-ad-client="ca-pub-2591881801621460"
+          data-ad-slot="your-ad-slot-id"
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
+      </div>
+    </div>
+  );
+  */
+
+  // 審査通過まで広告表示を無効化
+  return (
+    <div className="w-full bg-blue-50 py-4 px-4 text-center border-t border-blue-200">
+      <div className="max-w-4xl mx-auto">
+        <p className="text-blue-800 text-sm">
+          Google AdSense審査中 - 広告表示は一時的に無効化されています
+        </p>
+      </div>
     </div>
   );
 };

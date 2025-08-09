@@ -216,6 +216,9 @@ export const en = {
   subscriptionCancelled:
     "Your subscription has been cancelled. You can use premium features until the end of the current period.",
   subscriptionCancelError: "Failed to cancel subscription",
+  cancelSubscriptionConfirm:
+    "Are you sure you want to cancel your subscription?",
+  cancelSubscriptionError: "Failed to cancel subscription",
   accountDeleteError: "Failed to delete account",
   profileImageUpdateError: "Failed to update profile image",
 

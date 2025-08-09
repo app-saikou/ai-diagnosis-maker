@@ -104,15 +104,8 @@ const Header = () => {
       const userId = authUser?.id;
       if (!userId) throw new Error("ユーザーIDが取得できません");
 
-      // より確実な環境判定
-      const isProduction =
-        import.meta.env.MODE === "production" ||
-        import.meta.env.NODE_ENV === "production" ||
-        window.location.hostname === "ai-consultation.netlify.app";
-
-      const apiUrl = isProduction
-        ? "/.netlify/functions/create-checkout"
-        : "http://localhost:4242/api/create-checkout-session";
+      // シンプルに相対パスのみ使用
+      const apiUrl = "/.netlify/functions/create-checkout";
 
       const response = await fetch(apiUrl, {
         method: "POST",

@@ -1,4 +1,32 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ai-consultation.netlify.app/sitemap.xml 
+# Google Adsense用の設定
+User-agent: Mediapartners-Google
+Allow: /
+
+# サイトマップの場所
+Sitemap: https://ai-consultation.netlify.app/sitemap.xml
+
+# 重要なページの優先度
+Allow: /pricing
+Allow: /create
+Allow: /explore
+Allow: /profile
+
+# 一時的なページ（更新頻度が低い）
+Allow: /success
+Allow: /cancel
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+
+# 画像とアセット
+Allow: /favicon.svg
+Allow: /assets/
+Allow: /src/assets/
+
+# 検索エンジン向けの情報
+# サイト名: AIだけどなにか相談ある？
+# 言語: 日本語
+# 更新頻度: 日次 
