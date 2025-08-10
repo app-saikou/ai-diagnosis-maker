@@ -29,10 +29,19 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    // デバッグ情報を追加
+    console.log("🔍 リクエストボディ:", event.body);
+    console.log("🔍 STRIPE_SECRET_KEY exists:", !!process.env.STRIPE_SECRET_KEY);
+    
     const { userId, priceId } = JSON.parse(event.body);
+    
+    console.log("🔍 userId:", userId);
+    console.log("🔍 priceId:", priceId);
 
     // 環境変数に依存せず、確実に本番URLを指定
     const baseUrl = "https://ai-consultation.netlify.app";
+
+    console.log("🔍 Stripeセッション作成開始...");
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -43,16 +52,26 @@ exports.handler = async (event, context) => {
       client_reference_id: userId,
     });
 
+    console.log("🔍 Stripeセッション作成成功:", session.id);
+
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({ url: session.url }),
     };
   } catch (err) {
+    console.error("❌ エラー詳細:", err);
+    console.error("❌ エラーメッセージ:", err.message);
+    console.error("❌ エラースタック:", err.stack);
+    
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: err.message }),
+      body: JSON.stringify({ 
+        error: err.message,
+        details: err.stack,
+        type: err.constructor.name
+      }),
     };
   }
 };
