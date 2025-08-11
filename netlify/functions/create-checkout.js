@@ -31,10 +31,13 @@ exports.handler = async (event, context) => {
   try {
     // デバッグ情報を追加
     console.log("🔍 リクエストボディ:", event.body);
-    console.log("🔍 STRIPE_SECRET_KEY exists:", !!process.env.STRIPE_SECRET_KEY);
-    
+    console.log(
+      "🔍 STRIPE_SECRET_KEY exists:",
+      !!process.env.STRIPE_SECRET_KEY
+    );
+
     const { userId, priceId } = JSON.parse(event.body);
-    
+
     console.log("🔍 userId:", userId);
     console.log("🔍 priceId:", priceId);
 
@@ -63,14 +66,14 @@ exports.handler = async (event, context) => {
     console.error("❌ エラー詳細:", err);
     console.error("❌ エラーメッセージ:", err.message);
     console.error("❌ エラースタック:", err.stack);
-    
+
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         error: err.message,
         details: err.stack,
-        type: err.constructor.name
+        type: err.constructor.name,
       }),
     };
   }
