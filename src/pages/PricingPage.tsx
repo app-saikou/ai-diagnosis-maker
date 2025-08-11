@@ -53,6 +53,10 @@ const PricingPage: React.FC = () => {
       const apiUrl = "/.netlify/functions/create-checkout";
 
       console.log("🔗 API URL:", apiUrl);
+      console.log("🔗 リクエストデータ:", {
+        userId,
+        priceId: import.meta.env.VITE_STRIPE_PRICE_ID,
+      });
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -63,15 +67,23 @@ const PricingPage: React.FC = () => {
         }),
       });
 
+      console.log("🔗 レスポンスステータス:", response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // エラーレスポンスの詳細を取得
+        const errorData = await response.text();
+        console.error("🔗 エラーレスポンス:", errorData);
+        throw new Error(
+          `HTTP error! status: ${response.status}, body: ${errorData}`
+        );
       }
 
       const { url } = await response.json();
       window.location.href = url;
     } catch (err) {
       console.error("決済エラー詳細:", err);
-      alert(t("paymentError"));
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      alert(`決済エラー: ${errorMessage}`);
     }
   };
 
@@ -85,6 +97,7 @@ const PricingPage: React.FC = () => {
       const apiUrl = "/.netlify/functions/create-ticket-checkout";
 
       console.log("🔗 API URL:", apiUrl);
+      console.log("🔗 リクエストデータ:", { userId, price_id });
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -92,15 +105,23 @@ const PricingPage: React.FC = () => {
         body: JSON.stringify({ userId, price_id }),
       });
 
+      console.log("🔗 レスポンスステータス:", response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // エラーレスポンスの詳細を取得
+        const errorData = await response.text();
+        console.error("🔗 エラーレスポンス:", errorData);
+        throw new Error(
+          `HTTP error! status: ${response.status}, body: ${errorData}`
+        );
       }
 
       const { url } = await response.json();
       window.location.href = url;
     } catch (err) {
       console.error("チケット決済エラー詳細:", err);
-      alert(t("paymentError"));
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      alert(`決済エラー: ${errorMessage}`);
     }
   };
 
