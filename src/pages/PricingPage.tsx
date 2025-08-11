@@ -43,6 +43,13 @@ const PricingPage: React.FC = () => {
     },
   ];
 
+  // 環境変数のデバッグ情報
+  console.log("🔍 環境変数確認:", {
+    VITE_STRIPE_TICKET_PRICE_ID_1: import.meta.env.VITE_STRIPE_TICKET_PRICE_ID_1,
+    VITE_STRIPE_TICKET_PRICE_ID_3: import.meta.env.VITE_STRIPE_TICKET_PRICE_ID_3,
+    VITE_STRIPE_TICKET_PRICE_ID_10: import.meta.env.VITE_STRIPE_TICKET_PRICE_ID_10,
+  });
+
   // サブスク決済
   const handleSubscribe = async () => {
     try {
@@ -92,6 +99,11 @@ const PricingPage: React.FC = () => {
     try {
       const userId = authUser?.id;
       if (!userId) throw new Error(t("userIdError"));
+
+      // price_idの検証
+      if (!price_id) {
+        throw new Error("価格IDが設定されていません。環境変数を確認してください。");
+      }
 
       // シンプルに相対パスのみ使用
       const apiUrl = "/.netlify/functions/create-ticket-checkout";
