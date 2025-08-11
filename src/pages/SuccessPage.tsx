@@ -9,7 +9,7 @@ const SuccessPage: React.FC = () => {
   useEffect(() => {
     // 3秒後にホームページにリダイレクト
     const timer = setTimeout(() => {
-      navigate("/");
+      navigate("/", { replace: true });
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -46,7 +46,7 @@ const SuccessPage: React.FC = () => {
             <p className="text-sm text-green-800">アカウント: {user?.email}</p>
           </div>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/", { replace: true })}
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
           >
             ホームに戻る

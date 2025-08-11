@@ -9,7 +9,7 @@ const CancelPage: React.FC = () => {
   useEffect(() => {
     // 5秒後にホームページにリダイレクト
     const timer = setTimeout(() => {
-      navigate("/");
+      navigate("/", { replace: true });
     }, 5000);
 
     return () => clearTimeout(timer);
@@ -44,16 +44,16 @@ const CancelPage: React.FC = () => {
           </p>
           <div className="space-y-3">
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/", { replace: true })}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
             >
               {t("goHome")}
             </button>
             <button
-              onClick={() => window.history.back()}
+              onClick={() => navigate("/pricing", { replace: true })}
               className="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
             >
-              {t("goBack")}
+              料金プランに戻る
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-4">{t("redirectingToHome")}</p>
